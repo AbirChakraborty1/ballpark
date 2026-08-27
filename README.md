@@ -32,7 +32,7 @@ the validation evidence, three findings, and what I'd build first with ball-trac
 ## Reproduce
 
 ```bash
-pip install -r requirements.txt
+pip install -e .                     # installs the package + deps from requirements.txt
 python scripts/run_all.py            # download → ingest → features → models → figures → app bundle
 streamlit run app/Home.py
 ```
