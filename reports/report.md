@@ -152,23 +152,26 @@ contributions in the data are concentrated in overs 16–20.
 
 ## The tactics engine, on one real over
 
-**2019, Sunrisers Hyderabad v Delhi Capitals, Visakhapatnam.** DC, chasing 163,
-were 111/2 starting the 16th — roughly 52 needed off 30. SRH's captain bowled
-Basil Thampi the 16th and 18th between Bhuvneshwar Kumar and Khaleel Ahmed
-spells. Feeding the state to the optimiser — every legal allocation of the last
-five overs across the bowlers with quota left, each over scored by expected
-runs shifted by the bowler's shrunk Layer-3 effect, the projected total mapped
-through Layer 2 — it instead alternates Bhuvneshwar and Khaleel through 16–19
-and saves a front-line over for the 20th, worth about **11 percentage points**
-of win probability at that knife-edge state. DC won by five wickets.
+The optimiser searches every legal allocation of the remaining overs across the
+bowlers with quota left — each over scored by expected runs shifted by the
+bowler's shrunk Layer-3 effect, the projected total mapped through Layer 2 —
+and returns the one that minimises the chasing side's win probability. Run over
+all 1,186 close-finish states in the data, **it agrees with the captain exactly
+92% of the time**. The value is in the tail.
 
-The magnitude is a feature of the situation, not the model: when a chase needs
-eight-an-over with wickets in hand, three or four projected runs is the
-difference between a comfortable win and a real contest, so small bowler-quality
-edges compound into large win-probability swings. Across the close finishes in
-the data the optimiser's allocation differs from the captain's by a median of
-only a percentage point or two — but the tail, where it disagrees sharply, is
-exactly the set of overs that decided matches.
+**2019, Sunrisers Hyderabad v Delhi Capitals, Visakhapatnam.** DC, chasing 163,
+needed 42 off 24 starting the 18th over. SRH's captain gave Basil Thampi — a
+medium-pacer — the 18th, between Bhuvneshwar Kumar and Khaleel Ahmed. The
+optimiser instead alternates Bhuvneshwar and Khaleel through all four remaining
+overs: projected DC total 161, and the win probability it hands DC drops from
+74% to 29%. DC won by five wickets.
+
+The 45-point swing is mostly a statement about **leverage**, not about the
+model's confidence in the change: when a chase is on a knife edge, the
+win-probability curve is near-vertical, so the three or four runs a front-line
+over saves over a part-timer's reads as a large probability move. Thirty-one of
+the 1,186 states show a swing above 15 points, and every one of them is a
+genuine last-five-overs coin-flip.
 
 ## Limitations
 

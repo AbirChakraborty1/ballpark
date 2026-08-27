@@ -41,6 +41,74 @@ def build_replay() -> pd.DataFrame:
     return replay
 
 
+def build_tactics() -> pd.DataFrame:
+    """Pre-run the bowling-change optimiser on every close finish, so the app
+    reads a table instead of loading the models (Streamlit Cloud is memory-tight).
+    """
+    from ballpark.models.optimise import BowlingOptimiser
+
+    wpa = pd.read_parquet(processed("wpa.parquet"))
+    matches = pd.read_parquet(processed("matches.parquet")).set_index("match_id")
+    eff = pd.read_parquet(processed("player_effects.parquet"))
+    n2i = eff.set_index("name").person_id.to_dict()
+    i2n = {v: k for k, v in n2i.items()}
+    opt = BowlingOptimiser(effects=eff)
+
+    close = matches[matches.winner_runs.fillna(99).le(25) | matches.winner_wickets.fillna(99).le(4)]
+    covered = set(wpa.match_id)
+    rows = []
+    for mid in [x for x in close.index if x in covered]:
+        inn = wpa[(wpa.match_id == mid) & (wpa.innings == 2)].sort_values("ball")
+        if inn.empty or int(inn.over.max()) < 17:
+            continue
+        last_over = int(inn.over.max())
+        m = matches.loc[mid]
+        for fo in range(15, last_over):
+            if fo not in set(inn.over):
+                continue
+            at = inn[inn.over == fo].iloc[0]
+            if pd.isna(at.target) or at.wickets_lost >= 9:
+                continue
+            before = inn[inn.over < fo]
+            counts = before.groupby("bowler").over.nunique().to_dict()
+            quotas = {n2i.get(b): 4 - counts.get(b, 0) for b in inn.bowler.unique() if n2i.get(b)}
+            quotas = {k: v for k, v in quotas.items() if v and v > 0}
+            n_overs = last_over - fo + 1
+            if sum(quotas.values()) < n_overs:
+                continue
+            start = {"innings": 2, "score": int(at.score), "wickets": int(at.wickets_lost),
+                     "balls_bowled": (fo - 1) * 6, "allotted": 120, "venue": m.venue,
+                     "venue_era": "current", "target": int(at.target),
+                     "toss": bool(m.toss_winner == inn.batting_team.iloc[0])}
+            last = n2i.get(before.bowler.iloc[-1]) if len(before) else None
+            res = opt.optimise(start, quotas, n_overs, last_bowler=last)
+            if res.empty:
+                continue
+            actual = inn[inn.over >= fo].groupby("over").bowler.first().tolist()
+            aid = [n2i.get(b) for b in actual]
+            mr = res[res.order.apply(lambda o: o == aid)]
+            best = res.iloc[0]
+            rows.append({
+                "match_id": mid, "label": f"{m.season_year}  ·  {m.team_1} v {m.team_2}"
+                f"  ·  {m.venue.replace(' Stadium', '')}",
+                "from_over": fo, "score": int(at.score), "wickets": int(at.wickets_lost),
+                "target": int(at.target), "needed": int(at.target - at.score),
+                "balls_left": n_overs * 6, "result_team": m.result_team,
+                "optimiser": " → ".join(i2n.get(b, "?") for b in best["order"]),
+                "optimiser_wp": float(best.batting_win_prob),
+                "optimiser_score": float(best.proj_score),
+                "captain": " → ".join(actual),
+                "captain_wp": float(mr.iloc[0].batting_win_prob) if not mr.empty else None,
+                "alternatives": " | ".join(
+                    " → ".join(i2n.get(b, "?") for b in o) + f" ({wp:.0%})"
+                    for o, wp in zip(res.order.head(5), res.batting_win_prob.head(5))),
+            })
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["delta"] = df.captain_wp - df.optimiser_wp
+    return df
+
+
 def build_model_meta() -> dict:
     out = {}
     for name in ("outcome", "winprob"):
@@ -55,6 +123,9 @@ def main() -> None:
     (OUT / "figures").mkdir(exist_ok=True)
 
     build_replay().to_parquet(OUT / "replay.parquet", index=False)
+    tac = build_tactics()
+    tac.to_parquet(OUT / "tactics.parquet", index=False)
+    print(f"tactics: {len(tac)} pre-computed states")
 
     for name in ("matches.parquet", "player_wpa.parquet", "player_effects.parquet",
                  "matchups.parquet"):

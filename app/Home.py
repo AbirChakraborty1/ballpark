@@ -54,7 +54,8 @@ st.markdown(
        watch the small-sample names collapse toward the mean.
     3. **Matchups** — check a famous "he can't play left-arm spin" matchup and
        see how much of it survives shrinkage.
-    4. **Tactics** — run the bowling-change optimiser on a real death over.
+    4. **Tactics** — the bowling-change optimiser on real death overs: where it
+       agrees with the captain, and the tail where it doesn't.
     5. **Model card** — where the models are calibrated, where they are not,
        and what a public dataset cannot see.
     """
