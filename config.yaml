@@ -1,0 +1,93 @@
+# ballpark - single source of truth for paths, splits and model params.
+# Nothing in src/ may hardcode a path or a season boundary.
+
+project:
+  name: ballpark
+  seed: 20260826
+
+data:
+  # The league is one parameter: swap the dump + slug to add BBL/PSL/IT20s.
+  league_slug: ipl_male_csv2
+  download_url: https://cricsheet.org/downloads/ipl_male_csv2.zip
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  reference_dir: reference
+
+match:
+  balls_per_over: 6
+  overs: 20
+  phases:                      # inclusive over ranges, 1-indexed
+    powerplay: [1, 6]
+    middle: [7, 15]
+    death: [16, 20]
+
+splits:
+  # Temporal, never random. Test is touched once, at the end.
+  #
+  # Walk-forward is the PRIMARY protocol: a model in service would be retrained
+  # before each season, so it is evaluated that way (train on every prior
+  # season, score season t). The fixed split below is kept as a stress test that
+  # quantifies the cost of NOT retraining: IPL scoring rose 18.3% per ball
+  # between 2021 and 2024-26, so a model frozen at 2021 under-predicts the
+  # modern game badly. That gap is a reported result, not a bug to hide.
+  walk_forward_from: 2016
+  train_seasons_max: 2021
+  val_seasons: [2022, 2023]
+  test_seasons: [2024, 2025, 2026]
+
+models:
+  # Older seasons are a different sport. Weight each ball by 0.5 ** (age in
+  # seasons / half-life) so the fit reflects the current game without throwing
+  # away the sample size that makes player effects estimable.
+  # Selected by scripts/tune_recency.py on walk-forward seasons <= 2023 only.
+  # Shorter half-lives trade a little RMSE for markedly less bias, and bias is
+  # what matters here: xRuns is the baseline every player is measured against,
+  # so a systematically low baseline inflates every player's credit.
+  recency_halflife_seasons: 1.5
+
+  outcome:
+    classes: [0, 1, 2, 3, 4, 6, other, wicket]
+    n_estimators: 600
+    learning_rate: 0.05
+    num_leaves: 63
+    min_child_samples: 200
+  winprob:
+    # Deliberately small. A chase supplies ~120 rows sharing one outcome, so
+    # the effective sample is ~1,000 matches, not 300,000 balls. At 63 leaves
+    # the model memorises match trajectories: AUC 0.86 but log loss 0.89, worse
+    # than guessing 50%. See the module docstring in models/winprob.py.
+    n_estimators: 150
+    learning_rate: 0.05
+    num_leaves: 15
+    min_child_samples: 2000
+    calibration: isotonic
+  impact:
+    ridge_alphas: [1, 3, 10, 30, 100, 300, 1000, 3000]
+    min_balls_display: 200
+  simulate:
+    n_sims: 10000
+
+# Deliveries that must never enter training.
+exclusions:
+  # Anything past the second innings of a T20 is a super over -- and a tied
+  # super over is replayed, so innings 5 and 6 exist in this dump too.
+  max_regulation_innings: 2
+  drop_no_result: true
+  drop_dls_first_innings: true
+
+# Wicket types credited to the bowler; the rest are not.
+bowler_wicket_types:
+  - bowled
+  - caught
+  - caught and bowled
+  - lbw
+  - stumped
+  - hit wicket
+
+# Wicket types that do NOT cost the batting side one of its ten wickets.
+# 'retired out' is a genuine dismissal (Ashwin, IPL 2022) and is absent here;
+# 'retired hurt' is not, and accounts for all 7 wicket-margin discrepancies
+# between the ball-by-ball data and the recorded result.
+non_dismissal_wicket_types:
+  - retired hurt

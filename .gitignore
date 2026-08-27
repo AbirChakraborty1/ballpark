@@ -1,0 +1,18 @@
+# Raw dumps and heavy intermediates are rebuilt by `make all`.
+/data/raw/
+/data/interim/
+/data/processed/
+# App-facing artifacts are committed so the deployed app needs no build step.
+!/data/processed/app/
+# Trained models are rebuilt too; the small ones are force-added for the app.
+/models/*
+!/models/app/
+
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+.pytest_cache/
+reports/figures/*.png
+.DS_Store
