@@ -21,3 +21,5 @@ venv/
 .pytest_cache/
 reports/figures/*.png
 .DS_Store
+
+*.egg-info/
