@@ -20,7 +20,7 @@ shrinkage work, not the data.
 
 *1,243 IPL matches · 295,732 deliveries · 2008–2026 · walk-forward validation, test seasons touched once.*
 
-**[Live app](#)** — match replay with win-probability ribbon, impact leaderboards with a
+**[Live app](https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/)** — match replay with win-probability ribbon, impact leaderboards with a
 raw↔shrunk toggle, matchup explorer, bowling-change optimiser, and a model card that
 publishes where the models are wrong.
 

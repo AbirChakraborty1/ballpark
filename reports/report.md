@@ -1,6 +1,6 @@
 # ballpark: context-adjusted valuation from public IPL data
 
-**~1,900 words. Live app: _(deploy URL)_ · Code: https://github.com/AbirChakraborty1/ballpark**
+**~1,900 words. Live app: https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/ · Code: https://github.com/AbirChakraborty1/ballpark**
 
 ## The problem
 

@@ -26,8 +26,8 @@ starts a conversation.
 > card** tab — it publishes where the models are calibrated and where a public
 > dataset simply can't compete.
 >
-> **App:** [url]
-> **Write-up (~1,800 words):** [report url]
+> **App:** https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/
+> **Write-up (~1,900 words):** https://github.com/AbirChakraborty1/ballpark/blob/main/reports/report.md
 > **Code:** https://github.com/AbirChakraborty1/ballpark
 >
 > One finding I think you'd publish: across ~700 batter-vs-bowler-archetype
@@ -45,6 +45,6 @@ starts a conversation.
 ---
 
 ## Notes
-- Swap `[url]` / `[report url]` once the Streamlit app is deployed.
+- Links are filled in; swap the GitHub report link for a nicer hosted page if you publish one.
 - If sending on LinkedIn, drop the subject line and the sign-off.
 - Keep the repo link last; most reviewers open the app, not the code.
