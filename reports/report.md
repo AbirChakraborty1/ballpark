@@ -157,21 +157,23 @@ bowlers with quota left — each over scored by expected runs shifted by the
 bowler's shrunk Layer-3 effect, the projected total mapped through Layer 2 —
 and returns the one that minimises the chasing side's win probability. Run over
 all 1,186 close-finish states in the data, **it agrees with the captain exactly
-92% of the time**. The value is in the tail.
+94% of the time**. The value is in the tail.
 
 **2019, Sunrisers Hyderabad v Delhi Capitals, Visakhapatnam.** DC, chasing 163,
-needed 42 off 24 starting the 18th over. SRH's captain gave Basil Thampi — a
+needed 42 off 24 starting the 17th over. SRH's captain gave Basil Thampi — a
 medium-pacer — the 18th, between Bhuvneshwar Kumar and Khaleel Ahmed. The
-optimiser instead alternates Bhuvneshwar and Khaleel through all four remaining
-overs: projected DC total 161, and the win probability it hands DC drops from
-74% to 29%. DC won by five wickets.
+optimiser instead alternates Bhuvneshwar and Khaleel through all four overs. The
+projected DC total barely moves (161.2 either way), but that projection sits one
+run short of the target, and at 42-needed-off-24 the win-probability curve is
+steep enough that the sub-run difference reads as **7 points** — 70% down to
+63%. DC won by five wickets.
 
-The 45-point swing is mostly a statement about **leverage**, not about the
-model's confidence in the change: when a chase is on a knife edge, the
-win-probability curve is near-vertical, so the three or four runs a front-line
-over saves over a part-timer's reads as a large probability move. Thirty-one of
-the 1,186 states show a swing above 15 points, and every one of them is a
-genuine last-five-overs coin-flip.
+That is the honest shape of it. Bowler-quality edges at the death are real but
+small — a front-line over saves perhaps three or four runs over a part-timer's —
+so most of the time the optimiser and the captain land on the same allocation.
+The twenty-two states where the swing exceeds 15 points are all cases where one
+allocation's projected total crosses the target and the other's does not: the
+model is near-certain in both directions and a handful of runs flips it.
 
 ## Limitations
 

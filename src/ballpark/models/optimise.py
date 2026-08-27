@@ -85,7 +85,7 @@ class BowlingOptimiser:
     def _win_prob(self, s: dict, score: float, wkts: float) -> float:
         """Chase win prob at the projected end state. Cached per rounded score --
         it is monotone in score, so 1-run buckets do not change the ranking."""
-        key = (round(score), int(round(wkts)), s.get("target"))
+        key = (round(score), int(round(wkts)), s["venue"], s.get("target"), s["allotted"])
         hit = self._wp_cache.get(key)
         if hit is None:
             hit = float(self.winprob.predict(_row(s, s["allotted"], score, wkts)).iloc[0])
@@ -128,6 +128,10 @@ class BowlingOptimiser:
 
     def optimise(self, start: dict, quotas: dict, n_overs: int,
                  last_bowler: str | None = None) -> pd.DataFrame:
+        # Each call is one live state; clearing keeps caching a within-call win
+        # (rollout branches revisit states) with no cross-state leakage.
+        self._xr_cache.clear()
+        self._wp_cache.clear()
         rows = [{"order": list(o), **self.project(start, list(o))}
                 for o in self._legal_orders(quotas, n_overs, last_bowler)]
         cols = ["order", "proj_score", "proj_wkts", "batting_win_prob", "path"]
