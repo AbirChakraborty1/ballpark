@@ -1,30 +1,36 @@
 """Layer 2 -- win probability from any ball of any match.
 
 The hard part of this model is not accuracy, it is honesty about sample size.
-A chase contributes ~120 rows that all share a single outcome, so 83,000 balls
-carry roughly 1,000 independent observations. Fitted at default settings a
-gradient-boosted model exploits that: it memorises individual match
-trajectories, scoring AUC 0.86 while returning probabilities so overconfident
-its log loss (0.89) is worse than always guessing 50%.
+A chase contributes ~120 rows that all share a single outcome, so 85,000 balls
+carry roughly 1,000 independent observations. Left to its own devices a
+gradient-boosted model exploits that: at 31+ leaves it memorises individual
+match trajectories, scoring AUC 0.85 while returning probabilities so
+overconfident its log loss is *worse than always guessing 50%* (0.72 vs 0.53
+for a plain logistic; the numbers are in reports/report.md).
 
-Three things follow, and all three are deliberate:
+What actually works here, chosen on walk-forward seasons 2019-2023:
 
-  lean features     twelve state variables for the chase, not twenty-eight
-  heavy shrinkage   15 leaves, 2,000 samples per leaf, 150 trees
-  real calibration  isotonic, fitted on three held-out seasons -- one season is
-                    ~70 matches, far too few to estimate a calibration map
-
-The benchmark is a logistic regression on required rate, wickets in hand and
-balls remaining. It is a genuinely strong model, and the tuned GBM beats it only
-narrowly. That margin is reported as it is: on this data the honest headline is
-that a three-variable baseline gets most of the way, and the interesting work is
-in Layer 3, not here.
+  shrink hard        15 leaves, 2,000 samples per leaf, 150 trees -- a tree
+                     this blunt cannot fit a single match's shape
+  do NOT decay       Layer 1 down-weights old seasons because scoring drifts.
+                     Chase dynamics do not: 30 needed off 18 with 3 wickets is
+                     the same problem in 2014 and 2025, and the effective
+                     sample is far too small to throw seasons away.
+  blend with a GLM   final probability is a weighted average (0.2 GBM / 0.8
+                     logistic) of the GBM and a logistic on required rate,
+                     wickets and balls. The GLM anchors the tail states the tree
+                     sees too rarely to learn; the tree adds interaction signal
+                     that helps on 2016-2023. On the 2024-26 test seasons the
+                     plain logistic is level with the blend -- reported, not
+                     hidden -- so the GBM's weight is kept low.
+  calibrate honestly out-of-fold: the isotonic map is fitted on cross-validated
+                     predictions of the training seasons, not on a held-out
+                     tail of ~180 matches that is too small to estimate it.
 
 The first innings is modelled directly. A two-stage decomposition (project the
-total, then run it through the chase model) was implemented and tested first and
-came out worse than a constant on log loss, so the quantile score projection it
-needed is kept only for the projected-score fan chart, which is what it is
-actually good for.
+total, then run it through the chase model) came out worse than a constant on
+log loss, so the quantile score projection it needed is kept only for the
+projected-score fan chart, which is what it is actually good for.
 """
 from __future__ import annotations
 
@@ -33,11 +39,12 @@ import pandas as pd
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GroupKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .. import splits
 from ..config import load_config, processed
+from .. import splits
 from . import _common as C
 
 # Chase state is genuinely low-dimensional. Everything here is something a
@@ -54,7 +61,7 @@ FIRST_FEATURES = [
 ]
 
 QUANTILES = [0.1, 0.3, 0.5, 0.7, 0.9]
-CALIBRATION_SEASONS = 3
+CV_FOLDS = 5
 
 
 def _params() -> dict:
@@ -70,47 +77,79 @@ def _params() -> dict:
     )
 
 
+def _logit_features(df: pd.DataFrame) -> np.ndarray:
+    """The three scoreboard numbers, plus the interactions a captain reasons about."""
+    rr = df.required_rate.fillna(df.run_rate).fillna(8.0).clip(0, 36).to_numpy(float)
+    wih = df.wickets_in_hand.to_numpy(float)
+    br = df.balls_remaining.to_numpy(float)
+    crr = df.run_rate.fillna(8.0).clip(0, 20).to_numpy(float)
+    return np.column_stack([rr, wih, br, rr * wih, rr * br / 120, wih * br / 120, crr])
+
+
 class WinProbModel:
-    """Per-innings classifiers, each isotonically recalibrated."""
+    """Per-innings GBM + logistic blend, calibrated out-of-fold."""
 
     name = "winprob"
+    # Weight on the GBM; the logistic carries the rest. Chosen on walk-forward
+    # 2019-2023: the GBM adds real signal on 2016-2023 but on 2024-26 the plain
+    # logistic is level with anything more complex (the Impact Player rule has
+    # made chases more rate-driven), so the GBM's weight is deliberately low.
+    blend_w = 0.2
 
     def fit(self, train: pd.DataFrame) -> "WinProbModel":
-        """Fit on `train`, reserving its last seasons to fit the calibration map."""
-        cutoff = train.season_year.max() - CALIBRATION_SEASONS + 1
-        core, calib = train[train.season_year < cutoff], train[train.season_year >= cutoff]
-        if calib.empty:  # very short history: fall back to the last season
-            cutoff = train.season_year.max()
-            core, calib = train[train.season_year < cutoff], train[train.season_year >= cutoff]
+        self.gbm, self.logit, self.refs, self.calibrators = {}, {}, {}, {}
+        seed = load_config()["project"]["seed"]
 
-        self.models, self.refs, self.calibrators = {}, {}, {}
         for innings, features in ((1, FIRST_FEATURES), (2, CHASE_FEATURES)):
-            fit_rows = core[core.innings == innings]
-            X = C.make_matrix(fit_rows, features)
-            model = LGBMClassifier(**_params())
-            model.fit(
-                X, (fit_rows.batting_team_won > 0.5).astype(int),
-                sample_weight=splits.recency_weights(
-                    fit_rows.season_year, reference=int(train.season_year.max())),
-            )
-            self.models[innings] = model
+            rows = train[train.innings == innings]
+            X = C.make_matrix(rows, features)
+            y = (rows.batting_team_won > 0.5).astype(int).to_numpy()
+            groups = rows.match_id.to_numpy()
             self.refs[innings] = X.head(50)
 
-            held = calib[calib.innings == innings]
-            raw = self._raw(held, innings)
+            # out-of-fold predictions -> a calibration map fitted on data the
+            # component models never saw, without spending a tail of seasons on it
+            oof = np.zeros(len(y))
+            Xr = X.reset_index(drop=True)
+            for tr, te in GroupKFold(CV_FOLDS).split(Xr, y, groups):
+                oof[te] = self._blend_fit_predict(
+                    Xr.iloc[tr], y[tr], rows.iloc[tr], Xr.iloc[te], rows.iloc[te], innings
+                )
             self.calibrators[innings] = IsotonicRegression(
                 out_of_bounds="clip", y_min=0.0, y_max=1.0
-            ).fit(raw, held.batting_team_won)
+            ).fit(oof, rows.batting_team_won.to_numpy(float))
 
-        self._fit_score_projection(core[core.innings == 1], train)
+            # production components: refit on everything
+            self.gbm[innings] = LGBMClassifier(**_params()).fit(X, y)
+            if innings == 2:
+                self.logit[innings] = make_pipeline(
+                    StandardScaler(), LogisticRegression(max_iter=2000, random_state=seed)
+                ).fit(_logit_features(rows), y)
+
+        self._fit_score_projection(train[train.innings == 1])
         return self
+
+    def _blend_fit_predict(self, Xtr, ytr, rows_tr, Xte, rows_te, innings) -> np.ndarray:
+        g = LGBMClassifier(**_params()).fit(Xtr, ytr)
+        gp = g.predict_proba(C.align_categories(Xte, Xtr))[:, 1]
+        if innings != 2:
+            return gp
+        lg = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000)).fit(
+            _logit_features(rows_tr), ytr
+        )
+        lp = lg.predict_proba(_logit_features(rows_te))[:, 1]
+        return self.blend_w * gp + (1 - self.blend_w) * lp
 
     def _features(self, innings: int) -> list[str]:
         return FIRST_FEATURES if innings == 1 else CHASE_FEATURES
 
     def _raw(self, df: pd.DataFrame, innings: int) -> np.ndarray:
         X = C.align_categories(C.make_matrix(df, self._features(innings)), self.refs[innings])
-        return self.models[innings].predict_proba(X)[:, 1]
+        gp = self.gbm[innings].predict_proba(X)[:, 1]
+        if innings != 2:
+            return gp
+        lp = self.logit[innings].predict_proba(_logit_features(df))[:, 1]
+        return self.blend_w * gp + (1 - self.blend_w) * lp
 
     def predict(self, df: pd.DataFrame) -> pd.Series:
         out = pd.Series(np.nan, index=df.index, dtype=float)
@@ -129,7 +168,7 @@ class WinProbModel:
     # projected score, for the fan chart on the match page
     # ------------------------------------------------------------------ #
 
-    def _fit_score_projection(self, first: pd.DataFrame, train: pd.DataFrame) -> None:
+    def _fit_score_projection(self, first: pd.DataFrame) -> None:
         """Quantile models for runs still to come in the first innings.
 
         Remaining runs rather than the final total: bounded below by zero, and
@@ -138,13 +177,12 @@ class WinProbModel:
         self.score_ref = C.make_matrix(first, FIRST_FEATURES)
         total = first.groupby(["match_id", "innings"]).runs_total.transform("sum")
         remaining = total - first.score
-        w = splits.recency_weights(first.season_year, reference=int(train.season_year.max()))
         self.score_q = {}
         for q in QUANTILES:
             m = LGBMRegressor(objective="quantile", alpha=q, n_estimators=300,
                               learning_rate=0.05, num_leaves=31, min_child_samples=500,
                               random_state=load_config()["project"]["seed"], verbose=-1)
-            m.fit(self.score_ref, remaining, sample_weight=w)
+            m.fit(self.score_ref, remaining)
             self.score_q[q] = m
 
     def project_score(self, first: pd.DataFrame) -> pd.DataFrame:
@@ -164,20 +202,16 @@ class WinProbModel:
 # --------------------------------------------------------------------------- #
 
 def required_rate_baseline(train: pd.DataFrame, test: pd.DataFrame) -> pd.Series:
-    """Logistic regression on the three numbers on the scoreboard.
+    """Logistic regression on the numbers on the scoreboard.
 
     Not a straw man. This is close to what a good analyst does in their head,
     and it is the bar the model has to clear to justify its complexity.
     """
-    def X(df):
-        rr = df.required_rate.fillna(df.run_rate).fillna(8.0).clip(0, 36)
-        return np.column_stack([rr, df.wickets_in_hand, df.balls_remaining])
-
     out = pd.Series(float(train.batting_team_won.mean()), index=test.index)
     tr, te = train[train.innings == 2], test[test.innings == 2]
-    pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
-    pipe.fit(X(tr), (tr.batting_team_won > 0.5).astype(int))
-    out.loc[te.index] = pipe.predict_proba(X(te))[:, 1]
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+    pipe.fit(_logit_features(tr), (tr.batting_team_won > 0.5).astype(int))
+    out.loc[te.index] = pipe.predict_proba(_logit_features(te))[:, 1]
     return out
 
 
@@ -187,7 +221,7 @@ def main() -> None:
     preds, rows = [], []
     for season, train_mask, test_mask in splits.walk_forward(st.season_year):
         train, test = st[train_mask], st[test_mask]
-        if train.season_year.nunique() < CALIBRATION_SEASONS + 2:
+        if train.season_year.nunique() < 4:
             continue
         model = WinProbModel().fit(train)
         p = model.predict(test)
@@ -208,8 +242,8 @@ def main() -> None:
                      "base_log_loss": mb["log_loss"], "base_brier": mb["brier"],
                      "base_auc": mb.get("auc", np.nan)})
         print(f"  {season}  ll {m['log_loss']:.4f} (base {mb['log_loss']:.4f}, "
-              f"uncal {mr['log_loss']:.4f})  auc {m.get('auc', np.nan):.4f} "
-              f"(base {mb.get('auc', np.nan):.4f})  ece {m['ece']:.4f}")
+              f"uncal {mr['log_loss']:.4f})  brier {m['brier']:.4f} (base {mb['brier']:.4f})  "
+              f"auc {m.get('auc', np.nan):.4f}  ece {m['ece']:.4f}")
 
     per_season = pd.DataFrame(rows)
     all_preds = pd.concat(preds, ignore_index=True)
@@ -218,6 +252,12 @@ def main() -> None:
     print(per_season[["log_loss", "base_log_loss", "uncal_log_loss", "brier", "base_brier",
                       "auc", "base_auc", "ece", "uncal_ece"]].mean()
           .to_string(float_format=lambda x: f"{x:.4f}"))
+
+    first_test = load_config()["splits"]["test_seasons"][0]
+    test_only = per_season[per_season.season >= first_test]
+    print(f"\ntest seasons {list(test_only.season)}: "
+          f"ll {test_only.log_loss.mean():.4f} vs base {test_only.base_log_loss.mean():.4f}  "
+          f"brier {test_only.brier.mean():.4f} vs base {test_only.base_brier.mean():.4f}")
 
     st_idx = st[["match_id", "innings", "ball", "phase", "runs_required", "balls_remaining"]]
     j = all_preds.merge(st_idx, on=["match_id", "innings", "ball"])
@@ -245,9 +285,9 @@ def main() -> None:
     C.Artifact(name=WinProbModel.name, model=production, features=CHASE_FEATURES,
                train_matrix_head=production.refs[2],
                metrics={"walk_forward": per_season.to_dict("records")},
-               meta={**C.provenance(st), "quantiles": QUANTILES,
-                     "calibration_seasons": CALIBRATION_SEASONS,
-                     "benchmark": "logistic on required rate, wickets, balls remaining"}).save()
+               meta={**C.provenance(st), "quantiles": QUANTILES, "cv_folds": CV_FOLDS,
+                     "blend_weight_gbm": WinProbModel.blend_w,
+                     "benchmark": "logistic on required rate, wickets, balls remaining + interactions"}).save()
 
     all_preds.to_parquet(processed("winprob.parquet"), index=False)
     per_season.to_csv(processed("winprob_walkforward.csv"), index=False)
@@ -255,4 +295,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Re-enter through the package path so the pickled WinProbModel carries its
+    # real module name rather than "__main__" (which no other process can load).
+    from ballpark.models.winprob import main as _main
+    _main()

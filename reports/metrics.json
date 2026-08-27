@@ -1,0 +1,123 @@
+{
+  "data": {
+    "deliveries": 295732,
+    "matches": 1243,
+    "seasons": [
+      2008,
+      2026
+    ],
+    "players": 964
+  },
+  "layer1_xruns": {
+    "walk_forward_rmse": 1.681998048864341,
+    "baseline_rmse": 1.6939691835037183,
+    "walk_forward_bias": -0.056044441777845504,
+    "wicket_log_loss": 0.1940132117829414,
+    "wicket_baseline_log_loss": 0.1945963221643601,
+    "seasons": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ]
+  },
+  "layer2_winprob": {
+    "test_seasons": [
+      2024,
+      2025,
+      2026
+    ],
+    "test_log_loss": 0.5496333380236061,
+    "test_base_log_loss": 0.554647078758862,
+    "test_brier": 0.1824487685919455,
+    "test_base_brier": 0.19026372789181922,
+    "test_ece": 0.0586385009947169,
+    "all_ball_ece": 0.023086078203540427,
+    "all_ball_auc": 0.7706525015428022,
+    "innings2_brier": 0.14560131318764635,
+    "innings2_auc": 0.8763419824918096,
+    "walk_forward_seasons": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ]
+  },
+  "layer3_impact": {
+    "n_players_scored": 844,
+    "overrated_by_raw": [
+      {
+        "name": "J Fraser-McGurk",
+        "naive_above_expected_per_100": 65.5,
+        "shrunk_per_100": 23.1
+      },
+      {
+        "name": "DR Smith",
+        "naive_above_expected_per_100": 26.7,
+        "shrunk_per_100": 1.0
+      },
+      {
+        "name": "CH Morris",
+        "naive_above_expected_per_100": 22.9,
+        "shrunk_per_100": 0.5
+      },
+      {
+        "name": "SP Narine",
+        "naive_above_expected_per_100": 34.5,
+        "shrunk_per_100": 12.9
+      },
+      {
+        "name": "LS Livingstone",
+        "naive_above_expected_per_100": 17.7,
+        "shrunk_per_100": -1.2
+      }
+    ],
+    "underrated_by_raw": [
+      {
+        "name": "NV Ojha",
+        "naive_above_expected_per_100": -21.0,
+        "shrunk_per_100": -0.6
+      },
+      {
+        "name": "Kuldeep Yadav",
+        "naive_above_expected_per_100": -33.4,
+        "shrunk_per_100": -16.4
+      },
+      {
+        "name": "Gurkeerat Singh",
+        "naive_above_expected_per_100": -17.9,
+        "shrunk_per_100": -2.4
+      },
+      {
+        "name": "JP Duminy",
+        "naive_above_expected_per_100": -15.8,
+        "shrunk_per_100": -0.7
+      },
+      {
+        "name": "Lalit Yadav",
+        "naive_above_expected_per_100": -21.8,
+        "shrunk_per_100": -8.6
+      }
+    ]
+  },
+  "layer4_matchup": {
+    "cells_ge_40_balls": 692,
+    "mean_abs_raw_split_per_100": 38.91604539841541,
+    "mean_abs_shrunk_delta_per_100": 7.521837012651274,
+    "shrinkage_ratio": 0.19328369405585977
+  }
+}

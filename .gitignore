@@ -1,12 +1,17 @@
 # Raw dumps and heavy intermediates are rebuilt by `make all`.
 /data/raw/
 /data/interim/
-/data/processed/
+/data/processed/*
 # App-facing artifacts are committed so the deployed app needs no build step.
+# (Exclude the *contents* of processed/, not the directory, so this re-include works.)
 !/data/processed/app/
-# Trained models are rebuilt too; the small ones are force-added for the app.
+# Trained models are rebuilt by `make models`; the two the app loads live
+# (~15 MB total) are committed so the deploy needs no training step.
 /models/*
-!/models/app/
+!/models/outcome.joblib
+!/models/winprob.joblib
+!/models/outcome_metrics.json
+!/models/winprob_metrics.json
 
 *.pyc
 __pycache__/

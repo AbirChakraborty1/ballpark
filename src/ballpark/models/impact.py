@@ -169,7 +169,7 @@ class PlayerEffects:
         """Block bootstrap over matches -- the unit that is actually independent."""
         rng = np.random.default_rng(load_config()["project"]["seed"])
         matches = df.match_id.unique()
-        by_match = {m: idx.to_numpy() for m, idx in df.groupby("match_id").indices.items()}
+        by_match = {m: np.asarray(idx) for m, idx in df.groupby("match_id").indices.items()}
         y_all = self._residual(df)
         w_all = splits.recency_weights(df.season_year).to_numpy()
         X_all = self._design(df)

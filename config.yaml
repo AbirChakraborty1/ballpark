@@ -53,15 +53,18 @@ models:
     num_leaves: 63
     min_child_samples: 200
   winprob:
-    # Deliberately small. A chase supplies ~120 rows sharing one outcome, so
-    # the effective sample is ~1,000 matches, not 300,000 balls. At 63 leaves
-    # the model memorises match trajectories: AUC 0.86 but log loss 0.89, worse
-    # than guessing 50%. See the module docstring in models/winprob.py.
+    # Deliberately blunt. A chase supplies ~120 rows sharing one outcome, so
+    # the effective sample is ~1,000 matches, not 300,000 balls. At 31+ leaves
+    # the model memorises match trajectories: AUC 0.85 but log loss worse than
+    # guessing 50%. The shipped model is this GBM blended 20/80 with a logistic
+    # on required rate / wickets / balls, then isotonic-calibrated out-of-fold.
+    # No recency decay: chase dynamics, unlike scoring rates, do not drift.
+    # See the module docstring in models/winprob.py.
     n_estimators: 150
     learning_rate: 0.05
     num_leaves: 15
     min_child_samples: 2000
-    calibration: isotonic
+    calibration: isotonic_oof
   impact:
     ridge_alphas: [1, 3, 10, 30, 100, 300, 1000, 3000]
     min_balls_display: 200

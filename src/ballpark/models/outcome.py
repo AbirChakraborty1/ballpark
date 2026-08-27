@@ -233,4 +233,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Re-enter through the package path so the pickled OutcomeModel carries its
+    # real module name rather than "__main__" (which no other process can load).
+    from ballpark.models.outcome import main as _main
+    _main()

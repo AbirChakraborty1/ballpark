@@ -1,0 +1,221 @@
+{
+  "metrics": {
+    "walk_forward": [
+      {
+        "season": 2016,
+        "train_n": 122113,
+        "test_n": 14096,
+        "xruns_rmse": 1.5765503178225428,
+        "xruns_bias": -0.048645362823009464,
+        "runs_log_loss": 1.2979240265182428,
+        "wicket_log_loss": 0.18653440562562698,
+        "wicket_ece": 0.004268500007011938,
+        "base_rmse": 1.5854721909913323,
+        "base_wicket_log_loss": 0.18782215800439372
+      },
+      {
+        "season": 2017,
+        "train_n": 136209,
+        "test_n": 13849,
+        "xruns_rmse": 1.6195108782919025,
+        "xruns_bias": -0.06310860224148418,
+        "runs_log_loss": 1.2958808177443506,
+        "wicket_log_loss": 0.19811166749655137,
+        "wicket_ece": 0.001365891095032886,
+        "base_rmse": 1.6285139594258216,
+        "base_wicket_log_loss": 0.200114170534253
+      },
+      {
+        "season": 2018,
+        "train_n": 150058,
+        "test_n": 14286,
+        "xruns_rmse": 1.6838494322414936,
+        "xruns_bias": -0.07710666270646271,
+        "runs_log_loss": 1.3070852968364446,
+        "wicket_log_loss": 0.19689134920254678,
+        "wicket_ece": 0.005006970053869972,
+        "base_rmse": 1.6955111071191649,
+        "base_wicket_log_loss": 0.19597481289738258
+      },
+      {
+        "season": 2019,
+        "train_n": 164344,
+        "test_n": 14242,
+        "xruns_rmse": 1.6404588770225033,
+        "xruns_bias": -0.023905793123767616,
+        "runs_log_loss": 1.2908201644554698,
+        "wicket_log_loss": 0.1862702358037452,
+        "wicket_ece": 0.006466211544600022,
+        "base_rmse": 1.6517815317313536,
+        "base_wicket_log_loss": 0.1860271774333212
+      },
+      {
+        "season": 2020,
+        "train_n": 178586,
+        "test_n": 14510,
+        "xruns_rmse": 1.5998101123833557,
+        "xruns_bias": -0.03264000066652195,
+        "runs_log_loss": 1.2944798999803502,
+        "wicket_log_loss": 0.1836643886070292,
+        "wicket_ece": 0.005125166997932131,
+        "base_rmse": 1.6057334565211474,
+        "base_wicket_log_loss": 0.18412549970125894
+      },
+      {
+        "season": 2021,
+        "train_n": 193096,
+        "test_n": 14413,
+        "xruns_rmse": 1.5836919445773023,
+        "xruns_bias": 0.013389639860788005,
+        "runs_log_loss": 1.2741422740750954,
+        "wicket_log_loss": 0.19312621463948304,
+        "wicket_ece": 0.003429101449201298,
+        "base_rmse": 1.593837439333527,
+        "base_wicket_log_loss": 0.19263470503425634
+      },
+      {
+        "season": 2022,
+        "train_n": 207509,
+        "test_n": 17912,
+        "xruns_rmse": 1.6793479287196305,
+        "xruns_bias": -0.0058021982983751386,
+        "runs_log_loss": 1.2944099975246375,
+        "wicket_log_loss": 0.1980158442887735,
+        "wicket_ece": 0.0024099225555734996,
+        "base_rmse": 1.6877342805412723,
+        "base_wicket_log_loss": 0.19843011497229063
+      },
+      {
+        "season": 2023,
+        "train_n": 225421,
+        "test_n": 17745,
+        "xruns_rmse": 1.7064269334758033,
+        "xruns_bias": -0.052099205137505544,
+        "runs_log_loss": 1.3151752792008655,
+        "wicket_log_loss": 0.19814606372647184,
+        "wicket_ece": 0.0020465180680575854,
+        "base_rmse": 1.7215196939142556,
+        "base_wicket_log_loss": 0.19945775170248017
+      },
+      {
+        "season": 2024,
+        "train_n": 243166,
+        "test_n": 17103,
+        "xruns_rmse": 1.7799839050508124,
+        "xruns_bias": -0.13825025308375838,
+        "runs_log_loss": 1.3419805420073516,
+        "wicket_log_loss": 0.20022336789651551,
+        "wicket_ece": 0.0034040488657673886,
+        "base_rmse": 1.7976397366572552,
+        "base_wicket_log_loss": 0.20090181875094326
+      },
+      {
+        "season": 2025,
+        "train_n": 260269,
+        "test_n": 16959,
+        "xruns_rmse": 1.7967673550406982,
+        "xruns_bias": -0.10928666375869756,
+        "runs_log_loss": 1.3478845151665857,
+        "wicket_log_loss": 0.19670237984402814,
+        "wicket_ece": 0.004724830684749727,
+        "base_rmse": 1.810547990551282,
+        "base_wicket_log_loss": 0.19675289661995002
+      },
+      {
+        "season": 2026,
+        "train_n": 277228,
+        "test_n": 17501,
+        "xruns_rmse": 1.8355808528817033,
+        "xruns_bias": -0.07903375757750641,
+        "runs_log_loss": 1.3531103293216566,
+        "wicket_log_loss": 0.19645941248158408,
+        "wicket_ece": 0.0031385532450406623,
+        "base_rmse": 1.8553696317544885,
+        "base_wicket_log_loss": 0.1983184381574313
+      }
+    ],
+    "frozen": {
+      "val": {
+        "n": 35657,
+        "xruns_rmse": 1.6937373277590244,
+        "xruns_bias": -0.030975314312230218,
+        "runs_log_loss": 1.3047229568572924,
+        "wicket": {
+          "n": 35657,
+          "log_loss": 0.19802909455581763,
+          "brier": 0.048009618279878014,
+          "ece": 0.0021879783029966665,
+          "base_rate": 0.050985781193033625,
+          "auc": 0.6024192212063784
+        }
+      },
+      "test": {
+        "n": 51563,
+        "xruns_rmse": 1.8052655509691888,
+        "xruns_bias": -0.13801991731456975,
+        "runs_log_loss": 1.349139067662336,
+        "wicket": {
+          "n": 51563,
+          "log_loss": 0.19809139719460075,
+          "brier": 0.047885674158451165,
+          "ece": 0.0015898720119847266,
+          "base_rate": 0.050734053487966176,
+          "auc": 0.5886026928958733
+        }
+      }
+    }
+  },
+  "meta": {
+    "fitted_at": "2026-08-27T13:51:56+00:00",
+    "rows": 294729,
+    "seasons": [
+      2008,
+      2026
+    ],
+    "train_seasons_max": 2021,
+    "val_seasons": [
+      2022,
+      2023
+    ],
+    "test_seasons": [
+      2024,
+      2025,
+      2026
+    ],
+    "seed": 20260826,
+    "league": "ipl_male_csv2",
+    "protocol": "walk-forward; frozen split reported as a drift stress test",
+    "baselines": [
+      {
+        "model": "global mean",
+        "xruns_rmse": 1.8352491119184278,
+        "xruns_bias": -0.22731742467662608,
+        "wicket_log_loss": 0.20070127909882324
+      },
+      {
+        "model": "by phase",
+        "xruns_rmse": 1.8346436464156137,
+        "xruns_bias": -0.22801086221008093,
+        "wicket_log_loss": 0.19896763405675727
+      },
+      {
+        "model": "by over",
+        "xruns_rmse": 1.8317977114641113,
+        "xruns_bias": -0.22833655985386114,
+        "wicket_log_loss": 0.19812140311266865
+      },
+      {
+        "model": "phase x wickets",
+        "xruns_rmse": 1.83144643855486,
+        "xruns_bias": -0.242167646383876,
+        "wicket_log_loss": 0.19856649922409694
+      },
+      {
+        "model": "over x wickets",
+        "xruns_rmse": 1.825831934121294,
+        "xruns_bias": -0.2518856887840424,
+        "wicket_log_loss": 0.19909217341493635
+      }
+    ]
+  }
+}
