@@ -1,0 +1,533 @@
+<title>ballpark in five minutes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Karla:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#f1f4f7; --panel:#ffffff; --ink:#131a20; --soft:#5c6874; --rule:#dde3e9;
+  --accent:#2f6fd0; --accent-ink:#ffffff;
+  --keep:#12856a; --keep-wash:#e3f2ee;
+  --noise:#c8412f; --noise-wash:#fbe7e3;
+  --glow: 0 0 0 1px var(--rule), 0 20px 50px -24px rgba(20,30,45,.35);
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme:dark){
+    --bg:#0a0e13; --panel:#131b23; --ink:#e9eef3; --soft:#93a1ad; --rule:#232e39;
+    --accent:#5aa2ff; --accent-ink:#08121f;
+    --keep:#38d39f; --keep-wash:#10241f;
+    --noise:#ff7a6b; --noise-wash:#2a1613;
+    --glow: 0 0 0 1px var(--rule), 0 30px 70px -30px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0e13; --panel:#131b23; --ink:#e9eef3; --soft:#93a1ad; --rule:#232e39;
+  --accent:#5aa2ff; --accent-ink:#08121f;
+  --keep:#38d39f; --keep-wash:#10241f;
+  --noise:#ff7a6b; --noise-wash:#2a1613;
+  --glow: 0 0 0 1px var(--rule), 0 30px 70px -30px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Karla",-apple-system,"Segoe UI",sans-serif;
+  overflow:hidden; height:100vh;
+}
+.viewer{
+  position:relative; width:100%; height:100vh; max-height:100vh;
+  display:flex; flex-direction:column;
+}
+
+/* ---- progress timeline ---- */
+.timeline{ display:flex; gap:4px; padding:14px 18px 0; }
+.seg{ flex:1; height:3px; border-radius:2px; background:var(--rule); overflow:hidden; }
+.seg i{ display:block; height:100%; width:0; background:var(--accent); }
+.seg.done i{ width:100%; }
+.seg.now i{ width:0; animation:fill var(--dur,22s) linear forwards; }
+.seg.paused i{ animation-play-state:paused; }
+@keyframes fill{ to{ width:100% } }
+
+/* ---- stage ---- */
+.stage{ position:relative; flex:1; min-height:0; }
+.scene{
+  position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center;
+  gap:22px; padding:clamp(24px,5vw,72px); opacity:0; transform:translateY(14px);
+  transition:opacity .5s ease, transform .5s ease; pointer-events:none;
+  overflow-y:auto;
+}
+.scene.active{ opacity:1; transform:none; pointer-events:auto; }
+.kicker{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--accent);
+}
+.headline{
+  font-family:"Bricolage Grotesque","Karla",sans-serif; font-weight:700;
+  font-size:clamp(1.9rem,5.4vw,3.8rem); line-height:1.03; letter-spacing:-.02em;
+  margin:0; max-width:20ch; text-wrap:balance;
+}
+.caption{
+  font-family:"IBM Plex Mono",monospace; font-size:clamp(.92rem,1.7vw,1.15rem);
+  line-height:1.6; color:var(--soft); max-width:52ch; margin:0;
+  display:flex; flex-direction:column; gap:8px;
+}
+.caption span{ opacity:0; transform:translateY(6px); transition:opacity .45s, transform .45s; }
+.scene.active .caption span.show{ opacity:1; transform:none; }
+.caption b{ color:var(--ink); font-weight:500; }
+.caption .keep{ color:var(--keep); }
+.caption .noise{ color:var(--noise); }
+
+/* ---- per-scene visuals ---- */
+.visual{ margin-top:6px; }
+.stat-huge{
+  font-family:"Bricolage Grotesque",sans-serif; font-weight:800;
+  font-size:clamp(3rem,12vw,7rem); line-height:1; letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;
+}
+.wordmark{
+  font-family:"Bricolage Grotesque",sans-serif; font-weight:800;
+  font-size:clamp(3.4rem,13vw,8rem); letter-spacing:-.04em; line-height:.9;
+}
+.wordmark .dot{ color:var(--accent); }
+.chips{ display:flex; flex-wrap:wrap; gap:10px; }
+.chip{
+  font-family:"IBM Plex Mono",monospace; font-size:.8rem; letter-spacing:.04em;
+  border:1px solid var(--rule); border-radius:999px; padding:6px 13px; color:var(--soft);
+  opacity:.35; transition:opacity .4s, border-color .4s, color .4s;
+}
+.chip.lit{ opacity:1; border-color:var(--accent); color:var(--ink); }
+.compare{ display:flex; gap:clamp(16px,4vw,46px); flex-wrap:wrap; align-items:flex-end; }
+.bar-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+.bar-col .lab{ font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--soft); }
+.bar{ width:clamp(48px,9vw,88px); border-radius:6px 6px 0 0; }
+.bar.raw{ background:var(--noise); }
+.bar.shrunk{ background:var(--keep); }
+.bar-col .val{ font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:1rem; }
+svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
+.stamp{
+  display:inline-block; font-family:"Bricolage Grotesque",sans-serif; font-weight:800;
+  font-size:clamp(2rem,7vw,4rem); color:var(--accent); border:3px solid var(--accent);
+  border-radius:14px; padding:4px 18px; transform:rotate(-4deg);
+}
+.gauge-row{ display:flex; gap:clamp(16px,5vw,60px); flex-wrap:wrap; }
+.gauge{ display:flex; flex-direction:column; gap:6px; }
+.gauge .g-lab{ font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--soft); }
+.gauge .g-val{ font-family:"Bricolage Grotesque",sans-serif; font-weight:800;
+  font-size:clamp(1.6rem,5vw,2.6rem); }
+.link-row{ display:flex; flex-direction:column; gap:10px; font-family:"IBM Plex Mono",monospace;
+  font-size:.95rem; }
+.link-row a{ color:var(--accent); text-decoration:none; }
+.link-row a:hover{ text-decoration:underline; }
+
+/* ---- controls ---- */
+.controls{
+  display:flex; align-items:center; gap:14px; padding:14px 18px;
+  border-top:1px solid var(--rule); background:var(--panel); flex-wrap:wrap;
+}
+.controls button{
+  font-family:"Karla",sans-serif; font-size:13px; font-weight:600;
+  border:1px solid var(--rule); background:transparent; color:var(--ink);
+  border-radius:8px; padding:8px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+}
+.controls button:hover{ border-color:var(--accent); }
+.controls button.primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+.controls button[aria-pressed="true"]{ border-color:var(--accent); color:var(--accent); }
+.controls .count{ font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--soft);
+  margin-left:auto; }
+.controls .title{ font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--soft);
+  letter-spacing:.04em; }
+.dot-sep{ width:3px; height:3px; border-radius:50%; background:var(--soft); }
+
+/* scene menu */
+.menu{ position:absolute; left:14px; bottom:66px; background:var(--panel); border:1px solid var(--rule);
+  border-radius:12px; box-shadow:var(--glow); padding:8px; display:none; max-height:60vh; overflow:auto; z-index:20; }
+.menu.open{ display:block; }
+.menu button{ display:block; width:260px; text-align:left; border:none; background:transparent;
+  color:var(--ink); font-family:"IBM Plex Mono",monospace; font-size:12px; padding:8px 10px;
+  border-radius:7px; cursor:pointer; }
+.menu button:hover{ background:var(--bg); }
+.menu button.on{ color:var(--accent); }
+.menu .mi{ color:var(--soft); margin-right:8px; }
+
+@media (prefers-reduced-motion:reduce){
+  .scene{ transition:none } .seg.now i{ animation:none; width:0 }
+  .caption span{ transition:none }
+}
+@media (max-width:640px){
+  .controls .title{ display:none }
+  .menu button{ width:210px }
+}
+</style>
+
+<div class="viewer" id="viewer">
+  <div class="timeline" id="timeline"></div>
+
+  <div class="stage" id="stage">
+    <!-- 1 -->
+    <section class="scene" data-dur="14">
+      <div class="kicker">a five-minute tour</div>
+      <div class="wordmark">ballpark<span class="dot">.</span></div>
+      <p class="caption">
+        <span>A cricket-analytics project, explained in plain language —</span>
+        <span>what it does, and why every number in it is built the way it is.</span>
+      </p>
+    </section>
+
+    <!-- 2 -->
+    <section class="scene" data-dur="26">
+      <div class="kicker">the problem</div>
+      <h2 class="headline">Cricket numbers mislead in two ways.</h2>
+      <p class="caption">
+        <span><b class="noise">Context.</b> A boundary in the 3rd over isn't worth a boundary in the 19th defending eight an over. Raw stats don't know the difference.</span>
+        <span><b class="noise">Sample size.</b> A death-overs strike rate off 40 balls is mostly luck. Slice the data finely enough to be useful, and it turns to noise.</span>
+        <span>Every number a coach actually wants sits exactly where these two bite hardest.</span>
+      </p>
+    </section>
+
+    <!-- 3 -->
+    <section class="scene" data-dur="22">
+      <div class="kicker">the data</div>
+      <h2 class="headline">Public ball-by-ball data. Nothing more.</h2>
+      <div class="visual">
+        <div class="stat-huge" id="ballCounter">0</div>
+      </div>
+      <p class="caption">
+        <span><b>295,732</b> deliveries · <b>1,243</b> IPL matches · 2008 to 2026 · from cricsheet.org.</span>
+        <span>No ball tracking, no fielding positions, no pitch maps. The point isn't to out-data a broadcaster — it's to get the <b>modelling judgement</b> right.</span>
+      </p>
+    </section>
+
+    <!-- 4 -->
+    <section class="scene" data-dur="26">
+      <div class="kicker">layer 1 · expected runs</div>
+      <h2 class="headline">First, a neutral yardstick.</h2>
+      <div class="visual">
+        <svg class="viz" viewBox="0 0 560 130" aria-label="a ball fanning out into outcome probabilities 0 1 2 3 4 6 W">
+          <circle cx="40" cy="65" r="9" fill="var(--ink)"/>
+          <g font-family="IBM Plex Mono" font-size="12" fill="var(--soft)" text-anchor="middle">
+            <rect x="120" y="20" width="46" height="90" rx="3" fill="var(--accent)" opacity="0.85"/><text x="143" y="124">0</text>
+            <rect x="176" y="35" width="46" height="75" rx="3" fill="var(--accent)" opacity="0.7"/><text x="199" y="124">1</text>
+            <rect x="232" y="86" width="46" height="24" rx="3" fill="var(--accent)" opacity="0.55"/><text x="255" y="124">2</text>
+            <rect x="288" y="102" width="46" height="8" rx="3" fill="var(--accent)" opacity="0.4"/><text x="311" y="124">3</text>
+            <rect x="344" y="78" width="46" height="32" rx="3" fill="var(--accent)" opacity="0.6"/><text x="367" y="124">4</text>
+            <rect x="400" y="92" width="46" height="18" rx="3" fill="var(--accent)" opacity="0.5"/><text x="423" y="124">6</text>
+            <rect x="456" y="96" width="46" height="14" rx="3" fill="var(--noise)" opacity="0.8"/><text x="479" y="124">W</text>
+          </g>
+        </svg>
+      </div>
+      <p class="caption">
+        <span>A model asks: for <b>this exact situation</b> — this over, these wickets in hand, this required rate, this batter's already faced 20 balls — what's an <b>average</b> ball worth?</span>
+        <span>That's <b>expected runs</b>. It's blind to who's batting on purpose. Every player number later is measured against it.</span>
+      </p>
+    </section>
+
+    <!-- 5 -->
+    <section class="scene" data-dur="28">
+      <div class="kicker">layer 2 · win probability</div>
+      <h2 class="headline">Then, the odds — recalculated every ball.</h2>
+      <div class="visual">
+        <svg class="viz" viewBox="0 0 560 120" aria-label="a win probability line drifting near 50 percent then climbing then falling sharply">
+          <line x1="20" y1="60" x2="540" y2="60" stroke="var(--rule)" stroke-dasharray="3 5"/>
+          <path id="ribbon" d="M20,62 C120,58 180,66 260,60 C300,57 320,60 320,60 C360,40 430,26 480,44 C505,53 525,90 538,112"
+                fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"
+                pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+          <circle cx="538" cy="112" r="4" fill="var(--noise)"/>
+        </svg>
+      </div>
+      <p class="caption">
+        <span>The win-probability ribbon — the story of a match in one line.</span>
+        <span>And it's <b class="keep">honest</b>: across every ball in the data, when it says 70%, the team goes on to win about 70% of the time. Calibration error: <b class="keep">2 points</b>.</span>
+      </p>
+    </section>
+
+    <!-- 6 -->
+    <section class="scene" data-dur="26">
+      <div class="kicker">layer 3 · player impact</div>
+      <h2 class="headline">40 balls is not a sample.</h2>
+      <div class="visual compare">
+        <div class="bar-col"><div class="lab">raw split</div><div class="bar raw" style="height:150px"></div><div class="val noise">± 13</div></div>
+        <div class="bar-col"><div class="lab">after shrinkage</div><div class="bar shrunk" style="height:84px"></div><div class="val keep">± 8</div></div>
+        <p class="caption" style="align-self:center">
+          <span>A raw "runs above average" number for a short career is mostly wobble.</span>
+          <span>So each estimate is <b class="keep">pulled toward the league mean</b>, hard for small samples, barely at all for long careers. The maths is a ridge regression — which is exactly a Bayesian prior in disguise.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="scene" data-dur="24">
+      <div class="kicker">layer 3 · an example</div>
+      <h2 class="headline">Jasprit Bumrah, both ways.</h2>
+      <div class="visual gauge-row">
+        <div class="gauge"><div class="g-lab">raw economy</div><div class="g-val">≈ 6.9 / over</div></div>
+        <div class="gauge"><div class="g-lab">looks</div><div class="g-val noise">ordinary</div></div>
+        <div class="gauge"><div class="g-lab">in context</div><div class="g-val keep">+36 runs saved / 100 balls</div></div>
+      </div>
+      <p class="caption">
+        <span>His raw numbers look average. But he bowls the hardest overs to the best batters — and once the model accounts for <b>who and when</b>, it rates him the best bowler in the data. 95% sure it's between +30 and +42.</span>
+      </p>
+    </section>
+
+    <!-- 8 -->
+    <section class="scene" data-dur="24">
+      <div class="kicker">layer 4 · matchups</div>
+      <h2 class="headline">"He can't play left-arm spin."</h2>
+      <div class="visual">
+        <span class="stat-huge" id="matchupNum">39</span>
+        <div style="margin-top:14px"><span class="stamp">19%</span></div>
+      </div>
+      <p class="caption">
+        <span>Across 692 batter-vs-bowling-type matchups, the average raw split is <b class="noise">39</b> runs per 100 balls.</span>
+        <span>Shrink it for sample size and it's <b class="keep">7.5</b> — about a fifth. Real archetype effects exist. The personal "he can't play it" part is mostly a 40-ball illusion.</span>
+      </p>
+    </section>
+
+    <!-- 9 -->
+    <section class="scene" data-dur="24">
+      <div class="kicker">layer 4 · tactics</div>
+      <h2 class="headline">Which bowler, which over?</h2>
+      <div class="visual compare">
+        <div class="bar-col"><div class="lab">captain</div><div class="bar shrunk" style="height:130px;background:var(--accent)"></div></div>
+        <div class="bar-col"><div class="lab">optimiser</div><div class="bar shrunk" style="height:122px;background:var(--accent)"></div></div>
+        <p class="caption" style="align-self:center">
+          <span>An optimiser plays out every legal way to bowl the last few overs and picks the best one.</span>
+          <span>On 1,186 real close finishes it agrees with the captain <b class="keep">94%</b> of the time. The honest headline is that captains are mostly right — the value is in the other 6%.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="scene" data-dur="22">
+      <div class="kicker">the app</div>
+      <h2 class="headline">Six tabs you can click through.</h2>
+      <div class="visual chips" id="tabChips">
+        <span class="chip">Match replay</span>
+        <span class="chip">Players</span>
+        <span class="chip">Matchups</span>
+        <span class="chip">Tactics</span>
+        <span class="chip">Model card</span>
+        <span class="chip">Match simulator</span>
+      </div>
+      <p class="caption">
+        <span>Match replay, player leaderboards, the matchup explorer, the optimiser —</span>
+        <span>and a <b>Model card</b> that does the rare thing: publishes exactly where the models are <b class="noise">wrong</b>.</span>
+      </p>
+    </section>
+
+    <!-- 11 -->
+    <section class="scene" data-dur="24">
+      <div class="kicker">the simulator</div>
+      <h2 class="headline">Or bring your own match.</h2>
+      <div class="visual">
+        <svg class="viz" viewBox="0 0 520 100" aria-label="upload a zip, two line-ups, a simulated score comparison">
+          <g font-family="IBM Plex Mono" font-size="12" fill="var(--soft)">
+            <rect x="10" y="30" width="90" height="40" rx="6" fill="none" stroke="var(--rule)"/><text x="30" y="55">.zip</text>
+            <path d="M120,50 h40 m-10,-8 l10,8 l-10,8" fill="none" stroke="var(--soft)"/>
+            <rect x="180" y="20" width="120" height="60" rx="6" fill="var(--panel)" stroke="var(--rule)"/><text x="195" y="45">XI + plan</text><text x="195" y="65">XI + plan</text>
+            <path d="M315,50 h30 m-8,-7 l8,7 l-8,7" fill="none" stroke="var(--soft)"/>
+            <text x="360" y="45" fill="var(--accent)" font-family="Bricolage Grotesque" font-size="20" font-weight="800">182</text>
+            <text x="430" y="45" fill="var(--noise)" font-family="Bricolage Grotesque" font-size="20" font-weight="800">169</text>
+            <text x="360" y="66">win prob 71%</text>
+          </g>
+        </svg>
+      </div>
+      <p class="caption">
+        <span>Upload any Cricsheet T20 zip. It builds every profile and simulates the match ball by ball, <b>entirely in your browser</b> — recency-weighted form, opponent strength, a pace-vs-spin matchup, set-batter and momentum effects, a calibrated win probability.</span>
+      </p>
+    </section>
+
+    <!-- 12 -->
+    <section class="scene" data-dur="16">
+      <div class="kicker">that's it</div>
+      <h2 class="headline">Public data. Honest models.</h2>
+      <div class="visual link-row">
+        <a href="https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/">the app →</a>
+        <a href="https://github.com/AbirChakraborty1/ballpark">the code →</a>
+      </div>
+      <p class="caption"><span>Every number in this tour is real, from the 2008–2026 cricsheet dump.</span></p>
+    </section>
+  </div>
+
+  <div class="menu" id="menu"></div>
+
+  <div class="controls">
+    <button class="primary" id="playBtn" aria-label="play or pause">▶ Play</button>
+    <button id="prevBtn" aria-label="previous scene">◀</button>
+    <button id="nextBtn" aria-label="next scene">▶</button>
+    <button id="restartBtn" aria-label="restart">↺</button>
+    <button id="audioBtn" aria-pressed="false" aria-label="toggle narration">🔊 Narrate</button>
+    <button id="menuBtn" aria-label="scene list">☰ Scenes</button>
+    <span class="dot-sep"></span>
+    <span class="title" id="sceneTitle"></span>
+    <span class="count" id="count">1 / 12</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var scenes = Array.prototype.slice.call(stage.querySelectorAll('.scene'));
+  var N = scenes.length;
+  var timeline = document.getElementById('timeline');
+  var playBtn = document.getElementById('playBtn');
+  var audioBtn = document.getElementById('audioBtn');
+  var menu = document.getElementById('menu');
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  var i = 0, playing = false, audio = false, timer = null, capTimers = [];
+  var TITLES = ["Intro","The problem","The data","Layer 1 · xRuns","Layer 2 · win prob",
+    "Layer 3 · shrinkage","Layer 3 · Bumrah","Layer 4 · matchups","Layer 4 · tactics",
+    "The app","The simulator","Close"];
+
+  // narration text per scene (spoken); falls back to caption text
+  var SAY = [
+    "ballpark. A cricket analytics project, explained in plain language.",
+    "Cricket numbers mislead in two ways. Context: a boundary in the third over isn't worth one in the nineteenth. And sample size: a death overs strike rate off forty balls is mostly luck. Every number a coach wants sits where both problems bite hardest.",
+    "The data is just public ball by ball records. Two hundred and ninety six thousand deliveries, twelve hundred matches, from cricsheet. No ball tracking. The point isn't to out-data a broadcaster, it's to get the modelling judgement right.",
+    "First, a neutral yardstick. A model asks: for this exact situation, what is an average ball worth? That's expected runs. It's deliberately blind to who is batting. Every player number later is measured against it.",
+    "Then, the odds, recalculated every ball. The win probability ribbon tells the story of a match in one line. And it's honest: when it says seventy percent, the team wins about seventy percent of the time.",
+    "Forty balls is not a sample. A raw runs above average number for a short career is mostly wobble. So each estimate is pulled toward the league mean, hard for small samples, barely at all for long careers.",
+    "Take Bumrah. His raw economy looks ordinary. But he bowls the hardest overs to the best batters, and once the model accounts for who and when, it rates him the best bowler in the data.",
+    "He can't play left arm spin. Across seven hundred matchups the average raw split is thirty nine runs per hundred balls. Shrink it for sample size and it's about a fifth of that. The personal part is mostly a forty ball illusion.",
+    "Which bowler, which over? An optimiser plays out every legal way to bowl the last few overs. On eleven hundred close finishes it agrees with the captain ninety four percent of the time. Captains are mostly right. The value is in the other six percent.",
+    "The app has six tabs. Match replay, player leaderboards, the matchup explorer, the optimiser, and a model card that publishes exactly where the models are wrong.",
+    "Or bring your own match. Upload any T20 zip and it simulates the game ball by ball, entirely in your browser, with recency weighted form, opponent strength, a pace versus spin matchup, and a calibrated win probability.",
+    "That's it. Public data, honest models. Every number in this tour is real."
+  ];
+
+  // build timeline + menu
+  scenes.forEach(function(s, k){
+    var seg = document.createElement('div'); seg.className = 'seg';
+    seg.innerHTML = '<i></i>'; timeline.appendChild(seg);
+    var b = document.createElement('button');
+    b.innerHTML = '<span class="mi">'+String(k+1).padStart(2,'0')+'</span>'+TITLES[k];
+    b.onclick = function(){ go(k); menu.classList.remove('open'); };
+    menu.appendChild(b);
+  });
+  var segs = Array.prototype.slice.call(timeline.children);
+
+  function durOf(k){ return (parseFloat(scenes[k].dataset.dur) || 20); }
+
+  function revealCaptions(k){
+    capTimers.forEach(clearTimeout); capTimers = [];
+    var spans = scenes[k].querySelectorAll('.caption span');
+    var each = Math.min(2200, (durOf(k)*1000*0.7) / Math.max(spans.length,1));
+    spans.forEach(function(sp, si){
+      if (reduce){ sp.classList.add('show'); return; }
+      capTimers.push(setTimeout(function(){ sp.classList.add('show'); }, 350 + si*each));
+    });
+  }
+
+  function runSceneFx(k){
+    if (k===2){ animateCount('ballCounter', 295732, durOf(k)*0.55); }
+    if (k===4){ var r=document.getElementById('ribbon'); if(r){ r.style.transition='none'; r.style.strokeDashoffset='1'; void r.getBoundingClientRect(); r.style.transition='stroke-dashoffset '+(durOf(k)*0.6)+'s ease-in-out'; r.style.strokeDashoffset='0'; } }
+    if (k===7){ animateCount('matchupNum', 39, 1.2, function(){ setTimeout(function(){ tweenText('matchupNum', 39, 7.5, 1.1); }, 900); }); }
+    if (k===9){ var ch=document.querySelectorAll('#tabChips .chip'); ch.forEach(function(c,ci){ setTimeout(function(){ c.classList.add('lit'); }, 300+ci*260); }); }
+  }
+
+  function animateCount(id, to, secs, done){
+    var el = document.getElementById(id); if(!el) return;
+    if (reduce){ el.textContent = to.toLocaleString(); if(done)done(); return; }
+    var t0 = performance.now(), ms = secs*1000, finished = false;
+    function finish(){ if(finished) return; finished = true; el.textContent = to.toLocaleString(); if(done) done(); }
+    (function frame(t){
+      if (finished) return;
+      var p = Math.min(1, (t-t0)/ms); var e = 1-Math.pow(1-p,3);
+      el.textContent = Math.round(to*e).toLocaleString();
+      if (p<1) requestAnimationFrame(frame); else finish();
+    })(t0);
+    setTimeout(finish, ms + 400);           // safety: land even if rAF is throttled
+  }
+  function tweenText(id, from, to, secs){
+    var el = document.getElementById(id); if(!el) return;
+    if (reduce){ el.textContent = to; return; }
+    var t0 = performance.now(), ms = secs*1000, finished = false;
+    function finish(){ if(finished) return; finished = true; el.textContent = to; }
+    (function frame(t){
+      if (finished) return;
+      var p = Math.min(1,(t-t0)/ms); var v = from+(to-from)*(1-Math.pow(1-p,3));
+      el.textContent = (Math.round(v*10)/10);
+      if(p<1) requestAnimationFrame(frame); else finish();
+    })(t0);
+    setTimeout(finish, ms + 400);
+  }
+
+  function speak(k){
+    try{
+      window.speechSynthesis.cancel();
+      if (!audio) return;
+      var u = new SpeechSynthesisUtterance(SAY[k] || '');
+      u.rate = 0.98; u.pitch = 1;
+      var vs = window.speechSynthesis.getVoices();
+      var pref = vs.find(function(v){ return /en-GB/.test(v.lang); }) || vs.find(function(v){ return /^en/.test(v.lang); });
+      if (pref) u.voice = pref;
+      u.onend = function(){ if (playing && audio && k===i) advance(); };
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  function render(){
+    scenes.forEach(function(s,k){ s.classList.toggle('active', k===i); });
+    segs.forEach(function(s,k){
+      s.classList.toggle('done', k<i);
+      s.classList.remove('now','paused');
+      s.querySelector('i').style.width = k<i ? '100%' : '0';
+    });
+    document.getElementById('count').textContent = (i+1)+' / '+N;
+    document.getElementById('sceneTitle').textContent = TITLES[i];
+    Array.prototype.forEach.call(menu.children, function(b,k){ b.classList.toggle('on', k===i); });
+    document.documentElement.style.setProperty('--dur', durOf(i)+'s');
+    revealCaptions(i);
+    runSceneFx(i);
+  }
+
+  function schedule(){
+    clearTimeout(timer);
+    if (audio){ speak(i); return; }           // audio drives advance via onend
+    var seg = segs[i]; seg.classList.add('now');
+    timer = setTimeout(advance, durOf(i)*1000);
+  }
+  function advance(){ if (i < N-1){ i++; render(); if (playing) schedule(); } else { stop(); } }
+
+  function play(){
+    playing = true; playBtn.textContent = '❚❚ Pause';
+    if (i === N-1) i = 0;
+    render();
+    if (audio){ try{ window.speechSynthesis.resume(); }catch(e){} }
+    schedule();
+  }
+  function stop(){
+    playing = false; playBtn.textContent = '▶ Play';
+    clearTimeout(timer); capTimers.forEach(clearTimeout);
+    segs.forEach(function(s){ s.classList.add('paused'); });
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+  }
+  function go(k){ stop(); i = Math.max(0, Math.min(N-1, k)); render(); }
+
+  playBtn.onclick = function(){ playing ? stop() : play(); };
+  document.getElementById('prevBtn').onclick = function(){ go(i-1); };
+  document.getElementById('nextBtn').onclick = function(){ go(i+1); };
+  document.getElementById('restartBtn').onclick = function(){ go(0); play(); };
+  document.getElementById('menuBtn').onclick = function(){ menu.classList.toggle('open'); };
+  audioBtn.onclick = function(){
+    audio = !audio; audioBtn.setAttribute('aria-pressed', audio);
+    audioBtn.textContent = audio ? '🔊 Narration on' : '🔊 Narrate';
+    if (!audio){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+    if (playing){ stop(); play(); }
+  };
+  document.addEventListener('keydown', function(e){
+    if (e.code === 'Space'){ e.preventDefault(); playing ? stop() : play(); }
+    else if (e.code === 'ArrowRight'){ go(i+1); }
+    else if (e.code === 'ArrowLeft'){ go(i-1); }
+  });
+  // chrome speechSynthesis keep-alive
+  setInterval(function(){ if (playing && audio){ try{ window.speechSynthesis.resume(); }catch(e){} } }, 8000);
+  if ('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged = function(){}; }
+
+  render();
+})();
+</script>
