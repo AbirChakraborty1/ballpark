@@ -40,6 +40,12 @@ streamlit run app/Home.py
 `make all` does the same on systems with `make`. Every model seeds from `config.yaml`;
 `python -m pytest tests -q` runs the parser-reconciliation and leakage tests.
 
+**Or run [`notebooks/ballpark_end_to_end.ipynb`](notebooks/ballpark_end_to_end.ipynb)** —
+point it at a cricsheet `ipl_male_csv2.zip`, run top to bottom, and it walks every
+stage (numbered `1`, `1.1`, `1.2`, …) and ends with dropdown explorers for matches,
+players, matchups and bowling changes. `RUN_MODELS = False` (default) uses the
+committed models and runs in ~2 minutes; `True` retrains everything from your zip.
+
 ## How it works
 
 ```
