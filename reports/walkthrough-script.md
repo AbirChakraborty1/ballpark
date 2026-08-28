@@ -61,9 +61,9 @@ voiceover over a screen capture of the app.
 **9 — Layer 4, tactics _(3:04, ~24s)_**
 > Which bowler, which over? An optimiser tries every legal way to bowl out the
 > rest of a chase and picks the toughest one for the batting side. Run over
-> eleven hundred real tight finishes, it lands on the exact allocation the
-> captain used ninety-four percent of the time. Captains mostly get it right.
-> The value is in the other six percent.
+> eleven hundred real tight finishes, its plan lands within a couple of points
+> of the captain's more than four times in five. Captains mostly get it right.
+> The biggest gap in the whole data set is about eighteen points.
 
 **10 — The app _(3:28, ~22s)_**
 > All of this is a web app with six tabs: match replay, player leaderboards,

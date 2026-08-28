@@ -8,10 +8,16 @@ probability. The search is exhaustive: a death-overs decision is 3-5 overs and
 
 Each candidate over is scored by expected value, not simulation: expected runs
 = 6 x xRuns for the over's state, shifted by the bowler's Layer-3 shrunk effect
-(runs saved per 100 balls); expected wickets likewise. The projected end state
-is mapped to a win probability through Layer 2 -- directly for a chase, and for
-a first innings by running the projected total through the chase model from a
-neutral opening state. Variance would only add noise to a comparison of means.
+(runs saved per 100 balls); expected wickets likewise.
+
+The rollout gives one number for the projected final total, but Layer 2 at the
+end of an innings is close to a step at the target -- feed it a point estimate
+and a two-run change in the projection swings the answer sixty points. So the
+projected total is treated as a distribution, Normal(mean, sigma) with sigma
+scaled to the historical spread of "runs still to come" at that stage of a
+chase, and the win probability is Layer 2 integrated over it. That is the
+difference between "49 off 30 with seven wickets" reading as 5% and reading as
+the ~45% it actually is.
 
 The report runs this on one real death over and puts the optimiser's choice
 next to the captain's, with the win-probability difference.
@@ -23,6 +29,14 @@ import pandas as pd
 
 from ..config import load_config, processed
 from . import _common as C
+
+
+# Spread of (final score - current score) at the start of a death over in the
+# second innings, 2008-2026, is close to SCORE_SD_ROOT_BALL * sqrt(balls left):
+# ~15 runs with 30 balls to go, ~13 with 24, ~11 with 18. Calibrated once, held
+# fixed. A little of this is the rollout's own uncertainty about the mean, which
+# is the right thing to fold in here anyway.
+SCORE_SD_ROOT_BALL = 2.85
 
 
 def _phase_of(over: int) -> str:
@@ -82,15 +96,29 @@ class BowlingOptimiser:
             self._xr_cache[key] = hit
         return hit
 
-    def _win_prob(self, s: dict, score: float, wkts: float) -> float:
-        """Chase win prob at the projected end state. Cached per rounded score --
-        it is monotone in score, so 1-run buckets do not change the ranking."""
-        key = (round(score), int(round(wkts)), s["venue"], s.get("target"), s["allotted"])
+    def _wp_point(self, s: dict, score: float, wkts: float) -> float:
+        """Layer 2 at one fully-projected end state. Cached on a 3-run bucket --
+        it is monotone in score, so the bucket does not change the ranking."""
+        key = (round(score / 3) * 3, int(round(wkts)), s["venue"], s.get("target"), s["allotted"])
         hit = self._wp_cache.get(key)
         if hit is None:
             hit = float(self.winprob.predict(_row(s, s["allotted"], score, wkts)).iloc[0])
             self._wp_cache[key] = hit
         return hit
+
+    def _win_prob(self, s: dict, score: float, wkts: float, horizon_balls: int) -> float:
+        """Chasing side's win prob, integrating Layer 2 over the projected total.
+
+        The rollout's `score` is a mean; the innings could plausibly land ~1.5
+        SD either side of it. Weight Layer 2 across that Normal instead of
+        reading it at the mean, so a knife-edge projection comes out near 50/50
+        rather than snapping to 0 or 1.
+        """
+        sigma = SCORE_SD_ROOT_BALL * max(horizon_balls, 6) ** 0.5
+        grid = np.arange(score - 3.2 * sigma, score + 3.2 * sigma + 1, 3.0)
+        w = np.exp(-0.5 * ((grid - score) / sigma) ** 2)
+        p = np.array([self._wp_point(s, g, wkts) for g in grid])
+        return float(p @ w / w.sum())
 
     def project(self, start: dict, order: list[str]) -> dict:
         score, wkts, balls = float(start["score"]), float(start["wickets"]), int(start["balls_bowled"])
@@ -101,7 +129,8 @@ class BowlingOptimiser:
             score += max(xr, 0); wkts = min(wkts + xw, 10); balls += 6
             path.append((bowler, round(xr, 1)))
         return {"proj_score": score, "proj_wkts": wkts,
-                "batting_win_prob": self._win_prob(start, score, wkts), "path": path}
+                "batting_win_prob": self._win_prob(start, score, wkts, 6 * len(order)),
+                "path": path}
 
     def _legal_orders(self, quotas: dict, n_overs: int, last_bowler: str | None):
         """Every over-by-over allocation obeying quota and no-consecutive-overs.
@@ -137,4 +166,9 @@ class BowlingOptimiser:
         cols = ["order", "proj_score", "proj_wkts", "batting_win_prob", "path"]
         if not rows:
             return pd.DataFrame(columns=cols)
-        return pd.DataFrame(rows).sort_values("batting_win_prob").reset_index(drop=True)
+        # Sub-run differences in the projection wash out once it is integrated,
+        # so many orders tie on win prob; break ties toward the lower projected
+        # total, which is the one a captain would recognise as "attacking".
+        return (pd.DataFrame(rows)
+                .sort_values(["batting_win_prob", "proj_score"])
+                .reset_index(drop=True))

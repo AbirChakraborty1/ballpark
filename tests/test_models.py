@@ -124,3 +124,27 @@ def test_matchup_shrinks_below_raw_splits() -> None:
     assert seen.matchup_delta_per_100.abs().mean() < 15
     # the interaction term is the most-shrunk piece
     assert seen.interaction_per_100.abs().mean() < seen.matchup_delta_per_100.abs().mean()
+
+
+# --- Layer 4c: optimiser ------------------------------------------------ #
+
+def test_optimiser_win_prob_is_not_a_step_at_the_target() -> None:
+    """A gettable chase must not read as near-certain either way. The rollout
+    projects one total; if the win prob is taken at that point instead of
+    integrated over a spread, Layer 2 behaves like a step at the target and a
+    two-run change swings the answer 60 points. Guard against that regression:
+    49 needed off 30 with 7 wickets in hand is a real contest, ~40-60%.
+    """
+    from ballpark.models.optimise import BowlingOptimiser
+
+    opt = BowlingOptimiser()
+    start = {"innings": 2, "score": 99, "wickets": 3, "balls_bowled": 90,
+             "allotted": 120, "venue": "Wankhede Stadium", "venue_era": "current",
+             "target": 148, "toss": False}
+    # two mid-tier bowlers, three overs each left
+    ids = list(opt.eff)[:2]
+    res = opt.optimise(start, {ids[0]: 3, ids[1]: 3}, 5)
+    assert not res.empty
+    assert 0.25 < res.batting_win_prob.min() < 0.75, res.batting_win_prob.min()
+    # and the best-to-worst spread over legal orders stays sane, not 0-to-1
+    assert res.batting_win_prob.max() - res.batting_win_prob.min() < 0.35

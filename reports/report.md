@@ -145,25 +145,34 @@ or middle-overs men, and the gap from them to a median bowler is far wider than
 the equivalent gap among batters. Wins added says the same from the other end:
 the highest per-ball swings in the data sit in overs 16 to 20.
 
-## The optimiser on one over
+## The optimiser on the death overs
 
-Run over all 1,186 tight finishes in the data, the optimiser lands on the exact
-allocation the captain used **94% of the time**. The gap between a front-line
-over and a fifth bowler's is three or four runs, so usually there's nothing to
-argue about.
+Run over all 1,180 tight finishes in the data, the optimiser's over-by-over
+plan and the one the captain actually used land **within two win-probability
+points of each other 84% of the time**, and within five points 90% of the time.
+Seven finishes out of 1,180 show a gap above ten points; two above fifteen. The
+difference between a front-line death over and a fifth bowler's is three or four
+runs, and spread over the last five overs that usually doesn't add up to much.
 
-Take SRH v DC at Visakhapatnam in 2019. DC needed 42 off 24 starting the 17th,
-five down. SRH's captain gave Basil Thampi the 18th, between Bhuvneshwar and
-Khaleel. The optimiser would have alternated Bhuvi and Khaleel through all four.
-The projected DC total barely moves — 161 either way — but that's a run short of
-the target, and at 42-off-24 the win-probability curve is steep enough that the
-sub-run difference shows up as about 7 points, 70% down to 63%. DC won by five
-wickets.
+The biggest single disagreement is KKR v SRH at Hyderabad in 2023. SRH needed
+48 off 36 with six wickets in hand; KKR's captain used Shardul Thakur and
+Vaibhav Arora for the seam overs around Narine and Chakaravarthy. The optimiser
+would have gone spin-heavy — Narine and Varun bowled out, the sixth over to the
+part-timer Anukul Roy rather than Thakur. On the model's read of those bowlers
+that is worth about ten runs across the remaining overs, which moves SRH from
+roughly 79% to 61%. That's the model backing one attack over another — a real
+if arguable call, not a single over deciding the game.
 
-That's the shape of it. Bowler-quality edges at the death are real but small.
-The 22 finishes where the swing tops 15 points are all cases where one
-allocation's projected total clears the target and the other's doesn't — the
-model's near-certain both ways and a handful of runs flips it.
+An earlier draft had a different example here: SRH v DC at Visakhapatnam in
+2019, where the optimiser looked to gain seven points by swapping one Basil
+Thampi over for Bhuvneshwar. That gap turned out to be an artefact. Asked for a
+single projected total, the win model behaves like a step at the target, so a
+sub-run difference in the projection was reading as seven points. The optimiser
+now treats the projection as a spread — the total can land a couple of overs'
+worth of runs either side of the mean — and integrates the win probability over
+it. That 2019 case comes out dead level, and so do most of the ones that used
+to look dramatic. It's also why a genuinely open chase like 49 off 30 with
+seven wickets in hand now reads as a real contest, not 5%.
 
 ## What it can't see
 
@@ -173,7 +182,9 @@ Bowling styles aren't in Cricsheet — I typed them in for the ~320 most-used
 players, covering roughly 90% of balls faced and 87% bowled; the rest fall back
 to the type-level number. The simulator treats bowling as average unless given a
 plan and doesn't track the strike ball to ball. The optimiser rolls expected
-values forward rather than simulating. IPL only — adding another league is a
+values forward rather than simulating, with a variance term on the projected
+total so a knife-edge chase reads near 50/50 instead of snapping to a
+near-certain result. IPL only — adding another league is a
 config line and a download, but I haven't re-checked anything on the BBL or PSL.
 
 ## What I'd build first with ball-tracking data
