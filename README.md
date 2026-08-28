@@ -2,6 +2,8 @@
 
 **Context-adjusted T20 valuation, built from public ball-by-ball data.**
 
+*Abir Chakraborty — [LinkedIn](https://www.linkedin.com/in/abir-chakraborty1/) · mail2abirchakraborty@gmail.com*
+
 Strike rate and average flatten everything. A six in the third over of a 240
 chase and a six in the last over defending 12 an over count the same on the
 scorecard. A death strike rate off 40 balls is closer to a coin flip than a

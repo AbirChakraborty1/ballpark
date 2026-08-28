@@ -27,7 +27,8 @@ st.markdown(
 
 st.caption(
     "Abir Chakraborty  ·  mail2abirchakraborty@gmail.com  ·  "
-    "[github.com/AbirChakraborty1](https://github.com/AbirChakraborty1/ballpark)  ·  "
+    "[LinkedIn](https://www.linkedin.com/in/abir-chakraborty1/)  ·  "
+    "[GitHub](https://github.com/AbirChakraborty1/ballpark)  ·  "
     "a portfolio project, not a product"
 )
 

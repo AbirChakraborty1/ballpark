@@ -1,5 +1,7 @@
 # ballpark: context-adjusted valuation from public IPL data
 
+Abir Chakraborty · [LinkedIn](https://www.linkedin.com/in/abir-chakraborty1/) · mail2abirchakraborty@gmail.com
+
 **Live app: https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/ · Code: https://github.com/AbirChakraborty1/ballpark**
 
 ## What bugged me
