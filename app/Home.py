@@ -58,6 +58,8 @@ st.markdown(
        agrees with the captain, and the tail where it doesn't.
     5. **Model card** — where the models are calibrated, where they are not,
        and what a public dataset cannot see.
+    6. **Full-match simulator** — a separate, self-contained tool: upload any
+       Cricsheet T20 zip and simulate a match ball by ball in your browser.
     """
 )
 
