@@ -150,15 +150,16 @@ strong{font-weight:600}
   <div class="wrap">
     <p class="kicker">ballpark · field guide</p>
     <h1>Every number in ballpark</h1>
-    <p class="dek">A walk through each tab of the app — what every chart and figure
-      shows, why it earns its place, and the exact arithmetic behind it, worked
-      through on real deliveries.</p>
-    <p class="note">The panels below are faithful redrawings, not screenshots — a
-      headless capture of the live Streamlit app renders blank, so each widget is
-      rebuilt here with the real numbers and the formula alongside it. The six
-      plots in the <a href="#model-card">Model&nbsp;card</a> section are the
-      actual figures the app ships. Live app:
-      <a href="https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/">ballpark‑mkmljvquubqdhwezbkgdtg.streamlit.app</a>.</p>
+    <p class="dek">A tab-by-tab guide to the app. For each chart: what it's showing,
+      why it's there, and the actual arithmetic behind it, worked through on real
+      deliveries.</p>
+    <p class="note">The panels here are redrawn, not screenshots — a headless
+      capture of the Streamlit app comes out blank, so I've rebuilt each one with
+      the real numbers and the formula next to it. The six plots in the
+      <a href="#model-card">model&nbsp;card</a> section are the actual figures the
+      app ships. Live app:
+      <a href="https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/">ballpark‑mkmljvquubqdhwezbkgdtg.streamlit.app</a>.
+      — Abir Chakraborty</p>
   </div>
 </header>
 
@@ -184,9 +185,9 @@ strong{font-weight:600}
       <span class="tab-eyebrow">Tab 00 · the landing page</span>
       <h2>Home</h2>
     </div>
-    <p class="lead">Four headline numbers, one per model layer, each shown against
-      the simple baseline it has to beat. This is the "does the modelling actually
-      work" summary — everything else in the app is downstream of these.</p>
+    <p class="lead">Four numbers, one per model layer, each next to the simple
+      thing it has to beat. If the modelling doesn't hold up here, nothing else
+      in the app is worth much.</p>
 
     <div class="piece">
       <span class="piece-tag">Metric</span>
@@ -198,13 +199,12 @@ strong{font-weight:600}
           probability it announced and what actually happened. Lower is better;
           0 is a perfect oracle, 0.25 is a coin that always says 50%.</dd>
         <dt>Why it's useful</dt>
-        <dd>A win‑probability number is only worth showing if it is <em>calibrated</em>
-          — when it says 70%, the team should win about 70% of the time. Brier
-          rewards being both confident <em>and</em> right. The −0.008 gap over the
-          baseline (a logistic regression on just required rate, wickets and balls)
-          is deliberately reported small: on recent seasons a chase is mostly a
-          rate problem, and the honest headline is that the fancy model only just
-          clears the simple one.</dd>
+        <dd>A win-probability number is only worth putting on screen if it's
+          calibrated — when it says 70%, the side should win about 70% of the
+          time. Brier rewards being confident and right. I'm showing the −0.008
+          gap over the baseline (a regression on just required rate, wickets and
+          balls) because it's small: a recent chase is mostly a rate problem, and
+          the fancier model only just clears the simple one.</dd>
       </dl>
       <div class="math">
         <div class="math-head">Brier score — worked on four balls</div>
@@ -232,11 +232,11 @@ Across all 51,563 test‑season balls that mean is <span class="g">0.182</span>;
           runs the <em>next ball</em> is worth. It is evaluated walk‑forward:
           trained on every prior season, scored on the next one, repeated.</dd>
         <dt>Why it's useful</dt>
-        <dd>A single ball is almost pure noise — it's a 0 or a 4 or a wicket — so
-          the error is always going to be large. The point of xRuns is not to
-          predict one ball; it is to be an <em>unbiased</em> yardstick that every
-          player number is then measured against. The tiny margin over the
-          conditional‑average baseline is expected and, frankly, reassuring.</dd>
+        <dd>One ball is a 0, a 4 or a wicket, so the error is always going to be
+          big. xRuns isn't meant to call the next ball. It's meant to be a
+          yardstick with no bias in it, that every player number is then measured
+          against. Only just beating a good conditional average is the result you
+          want here, not a worry.</dd>
       </dl>
       <div class="math">
         <div class="math-head">Root‑mean‑square error — worked on three balls</div>
@@ -269,10 +269,10 @@ shifts every player's number by the same amount and leaves the rankings intact.<
           how far the announced probability sits from the actual win rate in that
           bucket.</dd>
         <dt>Why it's useful</dt>
-        <dd>AUC says the model <em>orders</em> situations well; ECE says the number
-          on the dial can be <em>trusted as a probability</em>. You need both. ECE
-          of 0.023 means that across the whole app, when the ribbon says a number,
-          it's within about 2 points of the truth on average.</dd>
+        <dd>AUC tells you the model ranks situations in the right order. ECE tells
+          you the number itself can be read as a probability. Both matter. An ECE
+          of 0.023 means that across the whole app, when the line says a number,
+          it's about 2 points off the truth on average.</dd>
       </dl>
       <div class="math">
         <div class="math-head">Expected calibration error — one bucket</div>
@@ -295,9 +295,9 @@ Sum that over all 20 buckets → <span class="g">0.023</span>.</pre>
           once it is regressed for sample size. Averaged over the 692 batter ×
           bowler‑archetype cells that have at least 40 balls.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is the project's headline finding in one number. Commentary quotes
-          40‑ball matchup splits as if they were real; four‑fifths of that signal
-          is noise.</dd>
+        <dd>It's the main thing that came out of the project, in one number. TV
+          quotes 40-ball matchup splits as if they mean something; four-fifths of
+          that is the small sample talking.</dd>
       </dl>
       <div class="math">
         <div class="math-head">The ratio</div>
@@ -315,9 +315,9 @@ Sum that over all 20 buckets → <span class="g">0.023</span>.</pre>
       <span class="tab-eyebrow">Tab 01 · one match, ball by ball</span>
       <h2>Match replay</h2>
     </div>
-    <p class="lead">Pick any modelled match. Three pieces: the win‑probability
-      ribbon over both innings, the projected first‑innings‑score fan, and a table
-      of the balls that moved the game most.</p>
+    <p class="lead">Pick a match. Three things: the win-probability line over both
+      innings, the projected first-innings total as a fan, and a table of the
+      deliveries that moved it most.</p>
 
     <div class="piece">
       <span class="piece-tag">Chart</span>
@@ -331,9 +331,8 @@ Sum that over all 20 buckets → <span class="g">0.023</span>.</pre>
           <code>1 − win_prob</code>, because <code>win_prob</code> always refers to
           the side <em>currently batting</em> and in the chase that's the other team.</dd>
         <dt>Why it's useful</dt>
-        <dd>It turns a scorecard into a story — you can see exactly which over the
-          match turned, and by how much. It is also the raw material for every
-          "wins added" number in the Players tab.</dd>
+        <dd>You can see which over a match turned, and by how much. It's also what
+          every "wins added" number in the Players tab is built from.</dd>
         <dt>How <code>win_prob</code> is computed (a chase ball)</dt>
         <dd>Features: required run rate, runs required, balls remaining, wickets in
           hand, current run rate, rate pressure, over, striker balls faced,
@@ -389,9 +388,9 @@ P(CSK win) after the ball                   = <span class="b">0.000</span></pre>
           solid line the median projection, and the black line the score as it
           actually accrued.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is the most legible single visual in the app: you can watch the fan
-          narrow as the innings settles, and see the exact over where a
-          partnership or a collapse moved the whole distribution.</dd>
+        <dd>It's the clearest thing in the app — the fan narrows as the innings
+          settles, and a partnership or a collapse visibly shifts the whole
+          range.</dd>
         <dt>How it's computed</dt>
         <dd>Five separate LightGBM regressors, trained with a <em>quantile</em> loss
           at α = 0.1, 0.3, 0.5, 0.7, 0.9. Each predicts <em>runs still to come</em>
@@ -442,9 +441,9 @@ projected total at quantile q  =  current_score + max(0, remaining_runs_q)
           eight with the largest absolute swing, with the event (a wicket, or the
           runs off the bat) and the bowler.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is the match reduced to its hinge moments. A slog for six in over 3
-          barely registers; a wicket in a tight chase dominates. This is the same
-          quantity that, summed over a season, becomes a player's "wins added".</dd>
+        <dd>The match cut down to the moments that mattered. A six in over 3 barely
+          moves it; a wicket in a tight chase is the whole game. Add this up over
+          a season and you get a player's "wins added".</dd>
       </dl>
       <div class="tbl">
       <table class="d">
@@ -481,10 +480,10 @@ projected total at quantile q  =  current_score + max(0, remaining_runs_q)
       <span class="tab-eyebrow">Tab 02 · who is actually good</span>
       <h2>Players</h2>
     </div>
-    <p class="lead">Two numbers per player. <strong>Wins added</strong> — what
-      happened. <strong>Shrunk true rate</strong> — how well they actually bat or
-      bowl, once 40 balls stops being treated as a real sample. A role toggle
-      (batting / bowling) and a minimum‑balls slider filter the list.</p>
+    <p class="lead">Two numbers per player. <strong>Wins added</strong> is what
+      happened over a season. <strong>Shrunk true rate</strong> is the skill read —
+      how well he bats or bowls once 40 balls stops counting as a sample. A
+      batting/bowling toggle and a minimum-balls slider filter the list.</p>
 
     <div class="piece">
       <span class="piece-tag">Table + toggle</span>
@@ -497,9 +496,9 @@ projected total at quantile q  =  current_score + max(0, remaining_runs_q)
           estimate with a 95% interval. The toggle flips the leaderboard between
           the naive gap and the shrunk estimate.</dd>
         <dt>Why it's useful</dt>
-        <dd>The naive gap is what a normal stats site would show you, and it is
-          mostly noise for anyone with a short career or a role‑specific split.
-          The shrunk number is what you'd actually bet on.</dd>
+        <dd>The naive gap is roughly what a stats site would give you, and it's
+          mostly noise for anyone with a short career. The shrunk number is the
+          one you'd actually back.</dd>
       </dl>
       <div class="tbl">
       <table class="d">
@@ -560,9 +559,9 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           is flattered by their raw numbers; well <em>above</em>, sold short. The
           biggest movers are labelled — those are your over‑ and under‑rated lists.</dd>
         <dt>Why it's useful</dt>
-        <dd>One picture of how much the raw leaderboard lies, and about whom. Small
-          bubbles cluster near y = 0 no matter their x — that is shrinkage doing
-          its job on thin samples.</dd>
+        <dd>One picture of how much the raw leaderboard is off, and about whom.
+          Small bubbles sit near y = 0 whatever their x — the shrinkage doing its
+          job on the thin samples.</dd>
       </dl>
       <figure class="recreation">
         <svg viewBox="0 0 460 300" role="img" aria-label="Scatter of naive gap versus shrunk effect, small bubbles flattened toward the horizontal axis, large bubbles near the diagonal">
@@ -596,10 +595,9 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           sum (a bowler wants the batting side's win prob to <em>fall</em>); for a
           fielder, minus half the WPA on catches and run‑outs they were part of.</dd>
         <dt>Why it's useful</dt>
-        <dd>It converts "context" into a currency — games' worth of win probability
-          — and it maps one‑to‑one onto how a context‑adjusted stat is sold. But
-          it rewards <em>opportunity</em>: bat at four in a winning team and your
-          WPA piles up. It is a description of what happened, not a skill rating.</dd>
+        <dd>It puts context into a currency — games' worth of win probability. But
+          it rewards opportunity too: bat four in a winning side and it piles up.
+          It's a record of what a player did, not how good he is.</dd>
       </dl>
       <div class="tbl">
       <table class="d">
@@ -634,15 +632,14 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
       <span class="tab-eyebrow">Tab 03 · batter vs a kind of bowling</span>
       <h2>Matchups</h2>
     </div>
-    <p class="lead">"Kohli vs Rashid Khan" is 90 balls. "A right‑hander vs
-      right‑arm wrist‑spin in the middle overs" is thousands. This tab works in
-      the second language and shrinks the batter‑specific part of the matchup
-      toward zero, so a thin split falls back to the archetype's general effect
-      instead of to noise.</p>
+    <p class="lead">Kohli vs Rashid is 90 balls. A right-hander vs right-arm
+      wrist-spin in the middle overs is thousands. This tab works in the second
+      language, and regresses the batter-specific part of a matchup toward zero,
+      so a thin split falls back to how batters like him generally do.</p>
 
     <div class="piece">
       <span class="piece-tag">Headline stat</span>
-      <h3>"92% of a raw matchup split is noise"</h3>
+      <h3>Four-fifths of a raw matchup split is small-sample noise</h3>
       <dl class="qa">
         <dt>What it shows</dt>
         <dd>Across 692 batter × archetype cells with ≥40 balls, the average raw
@@ -650,10 +647,10 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           averages 7.5, and the truly batter‑specific piece (the interaction term)
           averages just 3.6.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is the number to quote back at a "he can't play left‑arm spin"
-          take. Real archetype effects exist — off‑spin is genuinely economical,
-          leg‑spin genuinely expensive — but the personal matchup, once penalised
-          for its sample size, is small.</dd>
+        <dd>The number to have when someone says "he can't play the leggie". The
+          type-level effects hold up — off-spin does go for less, leg-spin does
+          cost more — but the personal matchup, once you account for how thin it
+          is, is small.</dd>
       </dl>
     </div>
 
@@ -667,9 +664,8 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           left‑arm wrist‑spin), giving the runs per 100 balls the model expects
           them to score against that kind of bowling, with an uncertainty whisker.</dd>
         <dt>Why it's useful</dt>
-        <dd>It lets a coach see a real, sample‑corrected read on a matchup — and,
-          crucially, see the interval, which for a thin matchup is wide enough to
-          say "we don't actually know".</dd>
+        <dd>A sample-corrected read on a matchup, with the range attached — and
+          for a thin one the range is wide enough to say "we don't really know".</dd>
         <dt>How it's built</dt>
         <dd>The same ridge idea as Layer 3, with a third block of columns: one per
           batter × archetype pair. The interaction columns have few balls each, so
@@ -733,10 +729,10 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
       <span class="tab-eyebrow">Tab 04 · the bowling‑change optimiser</span>
       <h2>Tactics</h2>
     </div>
-    <p class="lead">Second innings, close finishes only. From a live state, with
-      each bowler's remaining quota, the optimiser searches every legal allocation
-      of the overs left and returns the one that minimises the chasing side's win
-      probability — shown next to what the captain actually did.</p>
+    <p class="lead">Second innings, tight finishes. From a point in the chase,
+      given each bowler's remaining quota, the optimiser tries every legal way to
+      bowl out the innings and picks the one that gives the chasing side the worst
+      odds. Shown next to what the captain actually did.</p>
     <div class="piece">
       <span class="piece-tag">Headline stat</span>
       <h3>The optimiser agrees with the captain 94% of the time</h3>
@@ -746,11 +742,10 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           allocation is <em>identical</em> to the captain's in 94% of cases. Of the
           rest, 33 show a win‑probability swing above 5 points and 22 above 15.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is an honest frame: bowler‑quality edges at the death are real but
-          small, so a tool that "always disagrees with the captain" would be
-          lying. And the biggest swings are a property of the situation — a
-          near‑vertical win‑probability curve turning a few projected runs into
-          tens of points — not the model's conviction about the change.</dd>
+        <dd>Bowler-quality edges at the death are real but small, so a tool that
+          disagreed with the captain every time would just be wrong. And the big
+          swings come from the situation, not the model being sure — a chase on a
+          knife edge, where a few projected runs is the whole result.</dd>
       </dl>
     </div>
 
@@ -764,9 +759,9 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           state: the two allocations, their projected win probabilities and final
           scores, and the top five allocations the search considered.</dd>
         <dt>Why it's useful</dt>
-        <dd>It puts a number on a second‑guess — "that over cost us X points of win
-          probability" — and shows the alternatives were close, so the reader can
-          judge for themselves.</dd>
+        <dd>It puts a number on a second-guess — "that over cost us X points" —
+          and shows how close the alternatives were, so you can judge it
+          yourself.</dd>
       </dl>
       <div class="math">
         <div class="math-head">The expected‑value rollout — Delhi Capitals chasing Sunrisers, 2019</div>
@@ -810,10 +805,10 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
       <span class="tab-eyebrow">Tab 05 · where the models are wrong</span>
       <h2>Model card</h2>
     </div>
-    <p class="lead">The tab that publishes the failure modes. Validation protocol,
-      then a section per layer with its real figure and metric, then the
-      limitations and "what I'd build first with ball‑tracking data". These are the
-      figures the app actually ships.</p>
+    <p class="lead">The tab where I say where the models fall short. How they were
+      checked, then a section per layer with its figure and its number, then the
+      limitations and what I'd build first with ball-tracking data. These are the
+      figures the app ships.</p>
 
     <div class="piece">
       <span class="piece-tag">Figure · Layer 1</span>
@@ -841,7 +836,7 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
           y‑axis, one line per phase of the second innings. The dashed diagonal is
           perfect calibration.</dd>
         <dt>Why it's useful</dt>
-        <dd>It is the single most important plot for a win‑probability model. If the
+        <dd>This is the plot that matters most for a win‑probability model. If the
           death‑overs line sagged below the diagonal, the ribbon would be
           systematically overconfident exactly when it matters most. It tracks the
           diagonal within about 3 points in every phase.</dd>

@@ -8,15 +8,16 @@ import streamlit as st
 from _data import ACCENT, BAD, GOOD, NEUTRAL, matches, page_header, replay
 
 page_header("Match replay",
-            "Win probability ball by ball, the projected first-innings score, "
-            "and the balls that moved the game most.")
+            "The win-probability line for a match, ball by ball. Below it, where "
+            "the first-innings total was projected to land as the innings went "
+            "on, and the deliveries that swung the game most.")
 
 m = matches()
-choice = st.selectbox("match", m.label, index=0)
+choice = st.selectbox("Match", m.label, index=0)
 row = m[m.label == choice].iloc[0]
 df = replay(int(row.match_id))
 if df.empty:
-    st.warning("No modelled data for this match."); st.stop()
+    st.warning("This match isn't in the modelled set."); st.stop()
 
 bat1 = df[df.innings == 1].batting_team.iloc[0]
 bat2 = df[df.innings == 2].batting_team.iloc[0] if (df.innings == 2).any() else None
@@ -30,7 +31,7 @@ fig = go.Figure()
 fig.add_hline(y=0.5, line=dict(color=NEUTRAL, width=1, dash="dot"))
 fig.add_trace(go.Scatter(
     x=df.ball_no, y=df.wp_team1, mode="lines", line=dict(color=ACCENT, width=2),
-    name=f"P({bat1} win)", hovertemplate="ball %{x}<br>P=%{y:.2f}<extra></extra>"))
+    name=f"{bat1} to win", hovertemplate="ball %{x}<br>%{y:.0%}<extra></extra>"))
 innings_break = int((df.innings == 1).sum())
 fig.add_vline(x=innings_break, line=dict(color=NEUTRAL, width=1))
 fig.update_layout(
@@ -38,14 +39,13 @@ fig.update_layout(
     xaxis_title="ball", showlegend=True, legend=dict(orientation="h", y=1.12))
 st.plotly_chart(fig, use_container_width=True)
 
-result = bat1 if row.result_team == bat1 else (bat2 or "—")
-st.caption(f"Result: **{row.result_team}** won. "
-           f"Final win-prob for {bat1}: {df.wp_team1.iloc[-1]:.0%}.")
+st.caption(f"**{row.result_team}** won. The line tracks {bat1}'s chances through "
+           f"the game and finishes at {df.wp_team1.iloc[-1]:.0%}.")
 
 # --- projected first-innings score fan --------------------------------------
 first = df[df.innings == 1]
 if "proj_q50" in first and first.proj_q50.notna().any():
-    st.subheader("Projected first-innings score")
+    st.subheader("Where the first-innings total was heading")
     fig2 = go.Figure()
     x = np.arange(len(first)) + 1
     fig2.add_trace(go.Scatter(x=np.r_[x, x[::-1]],
@@ -56,16 +56,17 @@ if "proj_q50" in first and first.proj_q50.notna().any():
                               y=np.r_[first.proj_q70, first.proj_q30[::-1]],
                               fill="toself", fillcolor="rgba(61,90,128,0.30)",
                               line=dict(width=0), name="30–70%"))
-    fig2.add_trace(go.Scatter(x=x, y=first.proj_q50, line=dict(color=ACCENT, width=2), name="median"))
+    fig2.add_trace(go.Scatter(x=x, y=first.proj_q50, line=dict(color=ACCENT, width=2),
+                              name="projected (median)"))
     fig2.add_trace(go.Scatter(x=x, y=first.score + first.runs_total.fillna(0),
-                              line=dict(color="black", width=1.5), name="actual"))
+                              line=dict(color="black", width=1.5), name="actual score"))
     fig2.update_layout(height=320, margin=dict(l=10, r=10, t=10, b=10),
                        xaxis_title="ball", yaxis_title="runs",
                        legend=dict(orientation="h", y=1.12))
     st.plotly_chart(fig2, use_container_width=True)
 
 # --- biggest swings --------------------------------------------------------
-st.subheader("Biggest swings")
+st.subheader("The deliveries that turned it")
 sw = df.reindex(df.wpa.abs().sort_values(ascending=False).index).head(8)
 sw = sw.assign(
     over_ball=lambda d: d.over.astype(str) + "." + d.ball_in_over.astype(str),
@@ -76,5 +77,6 @@ sw = sw.assign(
 )
 st.dataframe(
     sw[["innings", "over_ball", "batting_team", "bowler", "event", "swing"]]
-    .rename(columns={"over_ball": "over", "swing": "Δ win% (batting side)"}),
+    .rename(columns={"over_ball": "over", "batting_team": "batting",
+                     "swing": "swing to the batting side (win %)"}),
     hide_index=True, use_container_width=True)

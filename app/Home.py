@@ -9,13 +9,26 @@ st.set_page_config(page_title="ballpark", page_icon="🏏", layout="wide")
 
 st.title("ballpark")
 st.markdown(
-    "**Raw IPL statistics are context-blind and small-sample-noisy.** A boundary "
-    "in the 3rd over is not worth a boundary in the 19th defending 8-an-over, and "
-    "a death-overs strike rate off 40 balls is mostly luck. `ballpark` rebuilds "
-    "the conceptual core of a context-adjusted valuation engine from public "
-    "ball-by-ball data — an expected-runs model, a calibrated win-probability "
-    "model, and partially-pooled player effects — and uses them to answer "
-    "tactical questions."
+    "Strike rate and average flatten everything. A hundred off 55 chasing 12 an "
+    "over looks the same on the scorecard as a hundred off 55 on a featherbed "
+    "with the game already gone. A bowler who goes at eight bowling the 18th and "
+    "20th to set batters comes out behind one who goes at eight bowling the 8th "
+    "to a new pair.\n\n"
+    "I'm a cricket fan who wanted numbers that account for the situation, and "
+    "that don't fall apart when the sample is small. `ballpark` is my attempt at "
+    "it, built from public ball-by-ball data (Cricsheet, 2008–2026). There is no "
+    "ball-tracking here — no line and length, no field settings. What is here is "
+    "the modelling: an expected-runs model that prices every ball by the state "
+    "it was bowled in, a win-probability model I've checked actually holds up "
+    "out of sample, and player ratings that get pulled back toward average when "
+    "there isn't enough data to trust them. Roughly the questions Smart Stats "
+    "and WinViz answer, from data anyone can download."
+)
+
+st.caption(
+    "Abir Chakraborty  ·  mail2abirchakraborty@gmail.com  ·  "
+    "[github.com/AbirChakraborty1](https://github.com/AbirChakraborty1/ballpark)  ·  "
+    "a portfolio project, not a product"
 )
 
 m = metrics()
@@ -27,47 +40,49 @@ if m:
 
     wp = m["layer2_winprob"]
     c2.metric("win-prob Brier (test)", f"{wp['test_brier']:.3f}",
-              f"{wp['test_brier'] - wp['test_base_brier']:+.3f} vs RRR baseline",
+              f"{wp['test_brier'] - wp['test_base_brier']:+.3f} vs required-rate model",
               delta_color="inverse")
-    c2.caption(f"2nd-innings AUC {wp['innings2_auc']:.2f} · ECE {wp['test_ece']:.3f}")
+    c2.caption(f"2nd-innings AUC {wp['innings2_auc']:.2f} · calibration error {wp['test_ece']:.3f}")
 
     x = m["layer1_xruns"]
-    c3.metric("xRuns RMSE (walk-forward)", f"{x['walk_forward_rmse']:.3f}",
-              f"{x['walk_forward_rmse'] - x['baseline_rmse']:+.3f} vs over×wickets",
+    c3.metric("xRuns error (walk-forward)", f"{x['walk_forward_rmse']:.3f}",
+              f"{x['walk_forward_rmse'] - x['baseline_rmse']:+.3f} vs over×wickets average",
               delta_color="inverse")
-    c3.caption(f"bias {x['walk_forward_bias']:+.3f} runs/ball")
+    c3.caption(f"runs/ball · runs {x['walk_forward_bias']:+.3f} low, on purpose (see model card)")
 
     mu = m["layer4_matchup"]
-    c4.metric("matchup shrinkage ratio", f"{mu['shrinkage_ratio']:.2f}")
-    c4.caption(f"raw split {mu['mean_abs_raw_split_per_100']:.0f} → "
-               f"shrunk {mu['mean_abs_shrunk_delta_per_100']:.0f} runs/100")
+    c4.metric("how much of a matchup is real", f"{mu['shrinkage_ratio']:.0%}")
+    c4.caption(f"raw split {mu['mean_abs_raw_split_per_100']:.0f} → after shrinkage "
+               f"{mu['mean_abs_shrunk_delta_per_100']:.0f} runs/100")
 
 st.divider()
 
 st.markdown(
     """
-    ### A 60-second path
+    ### Where to look first
 
-    1. **Match replay** — open a recent final, watch the win-probability ribbon
-       and the projected-score fan, and see the biggest-swing balls picked out.
-    2. **Players** — flip the leaderboard between *raw* and *shrunk* impact and
-       watch the small-sample names collapse toward the mean.
-    3. **Matchups** — check a famous "he can't play left-arm spin" matchup and
-       see how much of it survives shrinkage.
-    4. **Tactics** — the bowling-change optimiser on real death overs: where it
-       agrees with the captain, and the tail where it doesn't.
-    5. **Model card** — where the models are calibrated, where they are not,
-       and what a public dataset cannot see.
-    6. **Full-match simulator** — a separate, self-contained tool: upload any
-       Cricsheet T20 zip and simulate a match ball by ball in your browser.
+    1. **Match replay** — pick a game, watch the win-probability line swing, see
+       the projected first-innings total narrow ball by ball, and the deliveries
+       that turned it.
+    2. **Players** — the same leaderboard raw and shrunk, side by side. Watch the
+       small-sample names slide back toward the pack when you switch it on.
+    3. **Matchups** — pull up a "he can't play the leggie" reputation and see how
+       much of it holds up once you account for how few balls it's built on.
+    4. **Tactics** — a bowling-change optimiser run on real death overs. Mostly
+       it does what the captain did. The interesting part is when it doesn't.
+    5. **Model card** — where the models hold up, where they don't, and what a
+       public dataset can't see.
+    6. **Full-match simulator** — a separate tool. Load any Cricsheet T20 zip,
+       set two line-ups, and it simulates the game ball by ball in your browser.
     """
 )
 
 st.info(
-    "**On the data.** No ball tracking, no fielding positions, no pitch maps — "
-    "this is public cricsheet data. The point is not to compete with a tracking "
-    "provider on data; it is to get the modelling judgement right: temporal "
-    "validation, calibration, and shrinkage of small-sample effects. The model "
-    "card's last section is what I would build first *with* tracking data.",
+    "**On the data.** No ball-tracking, no fielding positions, no pitch maps — "
+    "just public Cricsheet. I'm not trying to out-data a provider that has all "
+    "of that. The point was to get the method right: check the models season by "
+    "season the way you'd actually retrain them, calibrate the probabilities, "
+    "and regress the small samples. The last section of the model card is what "
+    "I'd want to build first if I had tracking data to work with.",
     icon="📌",
 )

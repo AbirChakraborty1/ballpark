@@ -172,19 +172,19 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
       <div class="kicker">a five-minute tour</div>
       <div class="wordmark">ballpark<span class="dot">.</span></div>
       <p class="caption">
-        <span>A cricket-analytics project, explained in plain language —</span>
-        <span>what it does, and why every number in it is built the way it is.</span>
+        <span>A cricket project I built with public data.</span>
+        <span>What it does, and why the numbers are put together the way they are.</span>
       </p>
     </section>
 
     <!-- 2 -->
     <section class="scene" data-dur="26">
       <div class="kicker">the problem</div>
-      <h2 class="headline">Cricket numbers mislead in two ways.</h2>
+      <h2 class="headline">The scorecard hides two things.</h2>
       <p class="caption">
-        <span><b class="noise">Context.</b> A boundary in the 3rd over isn't worth a boundary in the 19th defending eight an over. Raw stats don't know the difference.</span>
-        <span><b class="noise">Sample size.</b> A death-overs strike rate off 40 balls is mostly luck. Slice the data finely enough to be useful, and it turns to noise.</span>
-        <span>Every number a coach actually wants sits exactly where these two bite hardest.</span>
+        <span><b class="noise">The situation.</b> A six in the 3rd over of a flat chase isn't a six in the 19th defending nine an over. Average and strike rate can't tell them apart.</span>
+        <span><b class="noise">Small samples.</b> A death strike rate off 40 balls is barely a reading. Slice the data fine enough to be useful and it's mostly noise.</span>
+        <span>Nearly every question worth asking about a player runs into one or both.</span>
       </p>
     </section>
 
@@ -197,14 +197,14 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
       </div>
       <p class="caption">
         <span><b>295,732</b> deliveries · <b>1,243</b> IPL matches · 2008 to 2026 · from cricsheet.org.</span>
-        <span>No ball tracking, no fielding positions, no pitch maps. The point isn't to out-data a broadcaster — it's to get the <b>modelling judgement</b> right.</span>
+        <span>No ball tracking, no fielding positions, no pitch maps. I wasn't trying to out-data a broadcaster. I wanted the method to be right.</span>
       </p>
     </section>
 
     <!-- 4 -->
     <section class="scene" data-dur="26">
       <div class="kicker">layer 1 · expected runs</div>
-      <h2 class="headline">First, a neutral yardstick.</h2>
+      <h2 class="headline">What's an average ball worth, right here?</h2>
       <div class="visual">
         <svg class="viz" viewBox="0 0 560 130" aria-label="a ball fanning out into outcome probabilities 0 1 2 3 4 6 W">
           <circle cx="40" cy="65" r="9" fill="var(--ink)"/>
@@ -220,15 +220,15 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         </svg>
       </div>
       <p class="caption">
-        <span>A model asks: for <b>this exact situation</b> — this over, these wickets in hand, this required rate, this batter's already faced 20 balls — what's an <b>average</b> ball worth?</span>
-        <span>That's <b>expected runs</b>. It's blind to who's batting on purpose. Every player number later is measured against it.</span>
+        <span>For this over, these wickets in hand, this required rate, this batter twenty balls in — what does an <b>average</b> batter score off this ball?</span>
+        <span>That's <b>expected runs</b>. It doesn't know who's batting, and that's the point. Every player number after this is measured against it.</span>
       </p>
     </section>
 
     <!-- 5 -->
     <section class="scene" data-dur="28">
       <div class="kicker">layer 2 · win probability</div>
-      <h2 class="headline">Then, the odds — recalculated every ball.</h2>
+      <h2 class="headline">The odds, every ball.</h2>
       <div class="visual">
         <svg class="viz" viewBox="0 0 560 120" aria-label="a win probability line drifting near 50 percent then climbing then falling sharply">
           <line x1="20" y1="60" x2="540" y2="60" stroke="var(--rule)" stroke-dasharray="3 5"/>
@@ -239,8 +239,8 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         </svg>
       </div>
       <p class="caption">
-        <span>The win-probability ribbon — the story of a match in one line.</span>
-        <span>And it's <b class="keep">honest</b>: across every ball in the data, when it says 70%, the team goes on to win about 70% of the time. Calibration error: <b class="keep">2 points</b>.</span>
+        <span>The win-probability line — a whole match in one picture.</span>
+        <span>And it <b class="keep">holds up</b>: across every ball in the data, when it says 70%, the side goes on to win about 70% of the time. It's off by about <b class="keep">2 points</b> on average.</span>
       </p>
     </section>
 
@@ -252,8 +252,8 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         <div class="bar-col"><div class="lab">raw split</div><div class="bar raw" style="height:150px"></div><div class="val noise">± 13</div></div>
         <div class="bar-col"><div class="lab">after shrinkage</div><div class="bar shrunk" style="height:84px"></div><div class="val keep">± 8</div></div>
         <p class="caption" style="align-self:center">
-          <span>A raw "runs above average" number for a short career is mostly wobble.</span>
-          <span>So each estimate is <b class="keep">pulled toward the league mean</b>, hard for small samples, barely at all for long careers. The maths is a ridge regression — which is exactly a Bayesian prior in disguise.</span>
+          <span>A raw "runs above average" for a short career is mostly wobble.</span>
+          <span>So every number gets <b class="keep">pulled back toward the pack</b> — hard when there's little data, barely at all for a long career. It's a ridge regression, which is really just a prior on every player.</span>
         </p>
       </div>
     </section>
@@ -268,7 +268,7 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         <div class="gauge"><div class="g-lab">in context</div><div class="g-val keep">+36 runs saved / 100 balls</div></div>
       </div>
       <p class="caption">
-        <span>His raw numbers look average. But he bowls the hardest overs to the best batters — and once the model accounts for <b>who and when</b>, it rates him the best bowler in the data. 95% sure it's between +30 and +42.</span>
+        <span>His raw economy looks ordinary. But he bowls the 18th and 20th to set batters. Account for who and when, and he's the best bowler in the data — 95% range, +30 to +42.</span>
       </p>
     </section>
 
@@ -281,8 +281,8 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         <div style="margin-top:14px"><span class="stamp">19%</span></div>
       </div>
       <p class="caption">
-        <span>Across 692 batter-vs-bowling-type matchups, the average raw split is <b class="noise">39</b> runs per 100 balls.</span>
-        <span>Shrink it for sample size and it's <b class="keep">7.5</b> — about a fifth. Real archetype effects exist. The personal "he can't play it" part is mostly a 40-ball illusion.</span>
+        <span>Across 692 batter-vs-bowling-type pairings, the average raw gap from expected is <b class="noise">39</b> runs per 100 balls.</span>
+        <span>Regress it for how thin it is and it's <b class="keep">7.5</b>, about a fifth. The type-level stuff is real. The personal "he can't play it" mostly isn't, once you count the balls.</span>
       </p>
     </section>
 
@@ -294,8 +294,8 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         <div class="bar-col"><div class="lab">captain</div><div class="bar shrunk" style="height:130px;background:var(--accent)"></div></div>
         <div class="bar-col"><div class="lab">optimiser</div><div class="bar shrunk" style="height:122px;background:var(--accent)"></div></div>
         <p class="caption" style="align-self:center">
-          <span>An optimiser plays out every legal way to bowl the last few overs and picks the best one.</span>
-          <span>On 1,186 real close finishes it agrees with the captain <b class="keep">94%</b> of the time. The honest headline is that captains are mostly right — the value is in the other 6%.</span>
+          <span>An optimiser tries every legal way to bowl out the rest of a chase and picks the toughest one for the batting side.</span>
+          <span>On 1,186 real tight finishes it matches the captain's call <b class="keep">94%</b> of the time. Captains mostly get it right. The value's in the other six percent.</span>
         </p>
       </div>
     </section>
@@ -313,8 +313,8 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         <span class="chip">Match simulator</span>
       </div>
       <p class="caption">
-        <span>Match replay, player leaderboards, the matchup explorer, the optimiser —</span>
-        <span>and a <b>Model card</b> that does the rare thing: publishes exactly where the models are <b class="noise">wrong</b>.</span>
+        <span>Match replay, player leaderboards, the matchup explorer, the optimiser,</span>
+        <span>and a <b>model card</b> that says where the models <b class="noise">fall short</b> — which not many cricket models do.</span>
       </p>
     </section>
 
@@ -336,19 +336,19 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
         </svg>
       </div>
       <p class="caption">
-        <span>Upload any Cricsheet T20 zip. It builds every profile and simulates the match ball by ball, <b>entirely in your browser</b> — recency-weighted form, opponent strength, a pace-vs-spin matchup, set-batter and momentum effects, a calibrated win probability.</span>
+        <span>Load any Cricsheet T20 zip, set two line-ups, and it plays the game out ball by ball, <b>all in your browser</b>. Recent form weighted toward strong opposition, a pace-vs-spin matchup, who's set, how the last few overs have gone, and a calibrated win probability at the end.</span>
       </p>
     </section>
 
     <!-- 12 -->
     <section class="scene" data-dur="16">
       <div class="kicker">that's it</div>
-      <h2 class="headline">Public data. Honest models.</h2>
+      <h2 class="headline">Public data, checked properly.</h2>
       <div class="visual link-row">
         <a href="https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/">the app →</a>
         <a href="https://github.com/AbirChakraborty1/ballpark">the code →</a>
       </div>
-      <p class="caption"><span>Every number in this tour is real, from the 2008–2026 cricsheet dump.</span></p>
+      <p class="caption"><span>Every number here is real, from the 2008–2026 Cricsheet data. — Abir Chakraborty</span></p>
     </section>
   </div>
 
@@ -385,18 +385,18 @@ svg.viz{ width:100%; max-width:640px; height:auto; display:block; }
 
   // narration text per scene (spoken); falls back to caption text
   var SAY = [
-    "ballpark. A cricket analytics project, explained in plain language.",
-    "Cricket numbers mislead in two ways. Context: a boundary in the third over isn't worth one in the nineteenth. And sample size: a death overs strike rate off forty balls is mostly luck. Every number a coach wants sits where both problems bite hardest.",
-    "The data is just public ball by ball records. Two hundred and ninety six thousand deliveries, twelve hundred matches, from cricsheet. No ball tracking. The point isn't to out-data a broadcaster, it's to get the modelling judgement right.",
-    "First, a neutral yardstick. A model asks: for this exact situation, what is an average ball worth? That's expected runs. It's deliberately blind to who is batting. Every player number later is measured against it.",
-    "Then, the odds, recalculated every ball. The win probability ribbon tells the story of a match in one line. And it's honest: when it says seventy percent, the team wins about seventy percent of the time.",
-    "Forty balls is not a sample. A raw runs above average number for a short career is mostly wobble. So each estimate is pulled toward the league mean, hard for small samples, barely at all for long careers.",
-    "Take Bumrah. His raw economy looks ordinary. But he bowls the hardest overs to the best batters, and once the model accounts for who and when, it rates him the best bowler in the data.",
-    "He can't play left arm spin. Across seven hundred matchups the average raw split is thirty nine runs per hundred balls. Shrink it for sample size and it's about a fifth of that. The personal part is mostly a forty ball illusion.",
-    "Which bowler, which over? An optimiser plays out every legal way to bowl the last few overs. On eleven hundred close finishes it agrees with the captain ninety four percent of the time. Captains are mostly right. The value is in the other six percent.",
-    "The app has six tabs. Match replay, player leaderboards, the matchup explorer, the optimiser, and a model card that publishes exactly where the models are wrong.",
-    "Or bring your own match. Upload any T20 zip and it simulates the game ball by ball, entirely in your browser, with recency weighted form, opponent strength, a pace versus spin matchup, and a calibrated win probability.",
-    "That's it. Public data, honest models. Every number in this tour is real."
+    "ballpark. A cricket project I built with public data.",
+    "The scorecard hides two things. The situation: a six in the third over of a flat chase isn't a six in the nineteenth defending nine an over, but average and strike rate treat them the same. And small samples: a death strike rate off forty balls is barely a reading. Nearly every question worth asking about a player runs into one or both.",
+    "The data is just public ball by ball records. Two hundred and ninety six thousand deliveries, twelve hundred matches, from Cricsheet. No ball tracking. I wasn't trying to out-data a broadcaster. I wanted the method to be right.",
+    "First model: what does an average batter score off this ball, given the over, the wickets in hand, the required rate, how set the batter is. That's expected runs. It doesn't know who's batting, and that's the point. Everything else is measured against it.",
+    "Then the odds, every ball. The win probability line is a whole match in one picture. And it holds up: when it says seventy percent, the side wins about seventy percent of the time.",
+    "A raw runs above average for a short career is mostly wobble. So every number gets pulled back toward the pack, hard when there's little data, barely at all for a long career.",
+    "Take Bumrah. His raw economy looks ordinary. But he bowls the eighteenth and twentieth to set batters. Account for who and when, and he's the best bowler in the data.",
+    "He can't play the leggie. Across seven hundred batter versus bowling type pairings, the average raw gap from expected is thirty nine runs per hundred balls. Regress it for how thin it is and it's about a fifth of that. The personal part mostly isn't there once you count the balls.",
+    "Which bowler, which over. An optimiser tries every legal way to bowl out the rest of a chase. On eleven hundred tight finishes it matches the captain's call ninety four percent of the time. Captains mostly get it right. The value's in the other six percent.",
+    "The app has six tabs. Match replay, player leaderboards, the matchup explorer, the optimiser, and a model card that says where the models fall short.",
+    "Or load your own match. Any T20 zip, and it plays the game out ball by ball in your browser, with recent form, opponent strength, a pace versus spin matchup, and a calibrated win probability.",
+    "That's it. Public data, checked properly. Every number here is real."
   ];
 
   // build timeline + menu

@@ -1,0 +1,183 @@
+<title>ballpark — app copy for review</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --ink:#182029; --soft:#5c6773; --rule:#dfe3e8;
+  --accent:#2f6fd0; --tagbg:#eef2f8; --edit:#12856a; --edit-bg:#e5f3ef;
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme:dark){
+  --bg:#0e1319; --card:#161d25; --ink:#e7ecf1; --soft:#96a2ad; --rule:#28323d;
+  --accent:#6aa8f0; --tagbg:#1c2733; --edit:#4bc7a3; --edit-bg:#12241f;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --card:#161d25; --ink:#e7ecf1; --soft:#96a2ad; --rule:#28323d;
+  --accent:#6aa8f0; --tagbg:#1c2733; --edit:#4bc7a3; --edit-bg:#12241f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Karla",system-ui,sans-serif;
+  font-size:16px;line-height:1.55}
+.wrap{max-width:820px;margin:0 auto;padding:36px 22px 90px}
+h1{font-size:1.7rem;margin:0 0 4px}
+.sub{color:var(--soft);margin:0 0 28px;font-size:.95rem}
+.tab{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:20px 22px;margin:18px 0}
+.tab > h2{margin:0 0 2px;font-size:1.25rem}
+.tab > .path{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--soft);margin-bottom:14px}
+.row{padding:9px 0;border-top:1px solid var(--rule)}
+.row:first-of-type{border-top:none}
+.tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--accent);background:var(--tagbg);border-radius:5px;
+  padding:2px 7px;margin-right:8px;vertical-align:1px}
+.txt{display:inline}
+.txt strong{font-weight:700}
+.note{color:var(--edit);background:var(--edit-bg);border-radius:5px;padding:1px 6px;font-size:.8rem;
+  font-family:"IBM Plex Mono",monospace}
+.cols{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--soft)}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--tagbg);padding:1px 4px;border-radius:4px}
+.legend{font-size:.85rem;color:var(--soft);margin:6px 0 24px}
+.legend .tag{margin:0 4px}
+</style>
+
+<div class="wrap">
+<h1>ballpark — every piece of copy in the app</h1>
+<p class="sub">All the on-screen text, tab by tab, as rewritten. Read it through and
+tell me anything that's off. Nothing is live yet — this is for review.
+The <span class="note">green</span> notes are mine, not app text.</p>
+<p class="legend">
+  <span class="tag">head</span> page title ·
+  <span class="tag">blurb</span> subtitle under it ·
+  <span class="tag">body</span> paragraph ·
+  <span class="tag">caption</span> small grey text ·
+  <span class="tag">control</span> dropdown / slider / toggle label ·
+  <span class="tag">metric</span> big-number label ·
+  <span class="tag">table</span> column headers ·
+  <span class="tag">chart</span> axis / legend ·
+  <span class="tag">button</span> button / subheading
+</p>
+
+<div class="tab">
+  <h2>0 · Home</h2>
+  <div class="path">app/Home.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">ballpark</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">Strike rate and average flatten everything. A hundred off 55 chasing 12 an over looks the same on the scorecard as a hundred off 55 on a featherbed with the game already gone. A bowler who goes at eight bowling the 18th and 20th to set batters comes out behind one who goes at eight bowling the 8th to a new pair.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">I'm a cricket fan who wanted numbers that account for the situation, and that don't fall apart when the sample is small. ballpark is my attempt at it, built from public ball-by-ball data (Cricsheet, 2008–2026). There is no ball-tracking here — no line and length, no field settings. What is here is the modelling: an expected-runs model that prices every ball by the state it was bowled in, a win-probability model I've checked actually holds up out of sample, and player ratings that get pulled back toward average when there isn't enough data to trust them. Roughly the questions Smart Stats and WinViz answer, from data anyone can download.</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">Abir Chakraborty  ·  mail2abirchakraborty@gmail.com  ·  github.com/AbirChakraborty1  ·  a portfolio project, not a product</span> <span class="note">← your name + contact. add LinkedIn?</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">deliveries modelled — <strong>295,732</strong> · caption: 1,243 matches, 2008–2026</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">win-prob Brier (test) — <strong>0.182</strong> · −0.008 vs required-rate model · caption: 2nd-innings AUC 0.88 · calibration error 0.059</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">xRuns error (walk-forward) — <strong>1.682</strong> · −0.012 vs over×wickets average · caption: runs/ball · runs −0.056 low, on purpose (see model card)</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">how much of a matchup is real — <strong>19%</strong> · caption: raw split 39 → after shrinkage 8 runs/100</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Where to look first</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>1. Match replay</strong> — pick a game, watch the win-probability line swing, see the projected first-innings total narrow ball by ball, and the deliveries that turned it.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>2. Players</strong> — the same leaderboard raw and shrunk, side by side. Watch the small-sample names slide back toward the pack when you switch it on.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>3. Matchups</strong> — pull up a "he can't play the leggie" reputation and see how much of it holds up once you account for how few balls it's built on.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>4. Tactics</strong> — a bowling-change optimiser run on real death overs. Mostly it does what the captain did. The interesting part is when it doesn't.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>5. Model card</strong> — where the models hold up, where they don't, and what a public dataset can't see.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>6. Full-match simulator</strong> — a separate tool. Load any Cricsheet T20 zip, set two line-ups, and it simulates the game ball by ball in your browser.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">📌 <strong>On the data.</strong> No ball-tracking, no fielding positions, no pitch maps — just public Cricsheet. I'm not trying to out-data a provider that has all of that. The point was to get the method right: check the models season by season the way you'd actually retrain them, calibrate the probabilities, and regress the small samples. The last section of the model card is what I'd want to build first if I had tracking data to work with.</span></div>
+</div>
+
+<div class="tab">
+  <h2>1 · Match replay</h2>
+  <div class="path">app/pages/1_Match_replay.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Match replay</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">The win-probability line for a match, ball by ball. Below it, where the first-innings total was projected to land as the innings went on, and the deliveries that swung the game most.</span></div>
+  <div class="row"><span class="tag">control</span><span class="txt">Match</span> <span class="note">dropdown</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">y-axis "win probability", x-axis "ball", legend "{team} to win", dotted line at 50%, vertical line at the innings break</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt"><strong>{winner}</strong> won. The line tracks {team}'s chances through the game and finishes at {NN}%.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Where the first-innings total was heading</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">bands "10–90%" / "30–70%", lines "projected (median)" / "actual score", axes "ball" / "runs"</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">The deliveries that turned it</span></div>
+  <div class="row"><span class="tag">table</span><span class="cols">innings · over · batting · bowler · event · swing to the batting side (win %)</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">(warning, only if a match has no model data) "This match isn't in the modelled set."</span></div>
+</div>
+
+<div class="tab">
+  <h2>2 · Players</h2>
+  <div class="path">app/pages/2_Players.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Players</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">Two numbers per player. Wins added is what happened — how much a player moved his team's chances over a season. The shrunk rate is the skill read: how well he bats or bowls once 40 balls stops counting as a sample. Everything is per 100 balls, above what an average player would have done in the same spots.</span></div>
+  <div class="row"><span class="tag">control</span><span class="txt">Batting or bowling</span> · <span class="tag">control</span><span class="txt">Minimum balls faced / bowled</span> · <span class="tag">control</span><span class="txt">Show the shrunk number (off shows the raw one)</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">tabs: "Raw vs shrunk" / "Wins added"</span></div>
+  <div class="row"><span class="tag">table</span><span class="cols">player · balls · raw /100 · vs expected /100 · shrunk /100 · low · high</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">The raw number against the shrunk one</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">x "raw, above expected (runs / 100)", y "shrunk (runs / 100)", dashed diagonal</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">On the dashed line, the shrunk number matches the raw one. A player well below it is flattered by his raw figure; well above it, sold short. The more balls behind a player, the bigger his dot — and the closer he sits to the line.</span></div>
+  <div class="row"><span class="tag">table</span><span class="cols">player · balls · wins added, 2016–2026</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">The win-probability swing added up over every ball a player faced or bowled. Runs with the game in the balance count for more than runs in a dead rubber — that's the point — but it also means batting three in a strong side is worth something on its own. It's a record of what a player did, not how good he is.</span></div>
+</div>
+
+<div class="tab">
+  <h2>3 · Matchups</h2>
+  <div class="path">app/pages/3_Matchups.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Matchups</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">How a batter goes against a <em>type</em> of bowling — right-arm pace, the leggie, left-arm orthodox, and so on. Where a batter has faced a type only a few dozen times, his personal record against it is regressed hard toward how batters like him generally do, so the number isn't just noise.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">Take every batter–bowling-type pairing with at least 40 balls behind it — <strong>692</strong> of them. The average raw gap from what you'd expect is <strong>39</strong> runs per 100 balls. Once you regress each one for how little it's built on, that drops to <strong>8</strong> — about <strong>19%</strong> of it. Most of what gets called a matchup on TV is a small sample doing the talking.</span></div>
+  <div class="row"><span class="tag">control</span><span class="txt">Batter</span> <span class="note">dropdown, default Kohli</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">horizontal bars per bowling type, x-axis "expected runs per 100 balls (shrunk, with 95% range)"</span></div>
+  <div class="row"><span class="tag">table</span><span class="cols">bowling type · balls · prior /100 · shrunk /100 · his edge /100 · just this matchup /100</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt"><strong>prior</strong> is where you'd put him against this type with no personal record to go on — his overall level, plus how batters generally do against it. <strong>his edge</strong> is how much better or worse than that the model has him. <strong>just this matchup</strong> is the slice of that which is specific to him against this bowling — the bit that gets regressed hardest, and it's usually small.</span></div>
+</div>
+
+<div class="tab">
+  <h2>4 · Tactics</h2>
+  <div class="path">app/pages/4_Tactics.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Tactics — bowling-change optimiser</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">Second innings, tight finishes. From a given point in the chase, the optimiser tries every legal way to bowl out the rest of the innings — who bowls which over, within the quotas — and picks the one that gives the chasing side the worst chance. Shown next to what the captain actually did.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">Across every tight finish in the data, the optimiser lands on <strong>the exact allocation the captain used 94% of the time</strong>. The gap between a front-line over and a fifth bowler's is only three or four runs, so most of the time there's nothing to argue about. The rows below are the ones where it disagrees. The biggest swings are chases balanced on a knife edge, where a few projected runs is the difference between a comfortable win and a nervy one — so they say more about how much was riding on the over than about the model being sure.</span></div>
+  <div class="row"><span class="tag">table</span><span class="cols">label · from over · runs needed · balls left · captain · optimiser · win% given to the batting side · won</span></div>
+  <div class="row"><span class="tag">control</span><span class="txt">Take a closer look at one</span> <span class="note">dropdown</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">Start of the 17th over: <strong>121/5</strong>, chasing 163, 42 needed off 24. Delhi Capitals won. <span class="note">(example values)</span></span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">"The optimiser's call" / "What the captain did"</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">chasing side to win — {NN}% · caption "projects the chase to reach {score}" · delta "{±NN}% vs the optimiser"</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">The five it rated best:</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">Scoring an allocation: each remaining over gets the expected runs and wickets for the match state, nudged by how much better or worse than average that bowler is — the shrunk rating from the Players tab — and the projected total goes through the win-probability model. Quotas and no back-to-back overs are kept to. It doesn't know who's on strike or where the field is.</span></div>
+</div>
+
+<div class="tab">
+  <h2>5 · Model card</h2>
+  <div class="path">app/pages/5_Model_card.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Model card</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">The part where I say where the models fall short. Most cricket models don't, and I think that's a mistake.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">How the models were checked</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>Season by season.</strong> For each season, the model is trained on every season before it and scored on that one — the way you'd actually retrain it if it were in use. Nothing is scored on data it was trained on.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">A <strong>frozen split</strong> (train up to 2021, test 2024–26) is kept separately and looked at once, as a check on how badly a model goes stale if you <em>don't</em> retrain it.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>Leakage</strong> is checked by code, not by reading it back: one test rebuilds the per-ball features from a cut-short innings and checks the rows that survive are byte-for-byte identical; another checks no match ends up in two different splits.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Layer 1 — expected runs and wickets</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">xRuns error (runs/ball) 1.682 · runs below actual −0.056 · wicket log loss 0.194</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">It only just beats a decent conditional average, and that's expected — a single ball is a 0, a 4 or a wicket, so most of the error is just noise you can't model away. xRuns isn't meant to call the next ball; it's meant to be an unbiased yardstick everything else is measured against. One known problem: because it only ever trains on past seasons, it runs about 0.056 runs a ball below what actually happens — it can't see this year's scoring going up. That's a roughly flat offset, so it moves everyone's number by the same amount and doesn't change the order. But it's there, and I'd rather flag it than quietly correct it.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Layer 2 — win probability</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">Brier, test seasons 0.182 · 2nd-innings AUC 0.876 · calibration error, all balls 0.023</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">Put plainly: <strong>a run chase is mostly about the run rate.</strong> A plain regression on required rate, wickets in hand and balls left is already a strong model, and on the untouched 2024–26 seasons it's about level with the fancier gradient-boosted one on second-innings balls — a touch ahead on log loss. The Impact Player rule and deeper batting line-ups have if anything made chases <em>more</em> rate-driven.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">So the tree only gets a fifth of the weight in the blend. It earns that on the things the regression can't do: the first innings, the projected-total fan on the replay page, keeping the probabilities calibrated across the phases, and producing the ball-by-ball swings the Players tab adds up. Calibration is done on held-out predictions, never on a tail of recent seasons — one season is about 70 games, nowhere near enough to fit a calibration curve.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Layer 3 — player impact</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">The shrunk numbers are ridge-regression coefficients on runs above expected — which is the same thing as putting a prior on every player centred on average, with the amount of shrinkage picked by cross-validation. <strong>844</strong> players get a number. The 95% ranges come from resampling whole matches, not individual balls, because balls in the same match aren't independent.</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt">table captions: "Raw numbers flatter them most" / "Raw numbers sell them shortest"</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">Layer 4 — matchups</span></div>
+  <div class="row"><span class="tag">metric</span><span class="txt">of a raw matchup split, this much is real — 19% · raw 39 → shrunk 8 runs per 100</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">About four-fifths of a raw batter-vs-type split is small-sample wobble. The type-level effects are real — off-spin goes for about 5 runs/100 less than average, the leggie for about 6 more — but the <em>personal</em> matchup, once you account for how thin it is, is usually not much.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">What it can't see, and what I've left out</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>No ball-tracking.</strong> No line, no length, no pace off the pitch, no revs, no field settings, no pitch map. "The leggie" here is a stand-in for what Hawk-Eye would tell you directly.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>Bowling styles aren't in the data.</strong> I typed them in by hand for the ~320 most-used players — enough to cover ~90% of balls faced and ~87% of balls bowled. The rest fall back to the type-level number.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>The simulator</strong> treats bowling as average unless you give it a plan, doesn't track who's on strike ball to ball, and skips byes and wides off the bat.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>The optimiser</strong> rolls forward expected values rather than simulating, and can't see the field or which batters are in.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>Super overs, no-results and DLS first innings</strong> are left out of training. Four overs in IPL history have seven legal balls (umpires miscounting) — those are kept as they are.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>IPL only.</strong> Adding another league is a one-line config change and a download, but I haven't retrained or re-checked anything on the BBL, PSL or internationals.</span></div>
+  <div class="row"><span class="tag">button</span><span class="txt">What I'd build first with ball-tracking data</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">1. <strong>Cluster deliveries by where they pitch and how fast, and rate batters against those clusters</strong> — instead of "the leggie", the actual ball. The matchup model is starved of the one thing that makes a matchup real.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">2. <strong>A shot-quality model.</strong> xRuns that also knew the false-shot rate, whether the batter was beaten, how well he middled it. That would tell a batter riding his luck apart from one in complete control — the single biggest source of noise left in the player numbers.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">3. <strong>Fielding.</strong> The data here only catches the wicket-ending stuff. Range, boundaries saved, the pressure a gun fielder puts on — badly under-measured, and probably the quickest thing to get right.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">4. <strong>How a bowler fades within a spell</strong> — pace dropping off over to over, which the model barely touches right now.</span></div>
+</div>
+
+<div class="tab">
+  <h2>6 · Full-match simulator</h2>
+  <div class="path">app/pages/6_Match_simulator.py</div>
+  <div class="row"><span class="tag">head</span><span class="txt">Full-match simulator</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">Load a Cricsheet T20 zip, set two line-ups and a venue, and it plays the game out ball by ball. Each player's profile is his own recent form, weighted toward strong opposition; the ball outcome mixes the batter and the bowler, adjusts for who's set and how the last few overs have gone, and the win probability at the end is calibrated. All of it fit from the data you load.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt">📦 A separate tool from the pages above — those use models I trained offline on the IPL; this one builds everything on the fly from whatever you give it. It runs entirely in your browser, so the zip never leaves your machine. Any men's T20 set from cricsheet.org works. It scrolls inside its own frame below.</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt"><span class="note">The tool embedded below (full_match_simulator.html) has its own headings, tooltips and model-card text — ~60 short strings — in a slightly different voice. Say the word and I'll do a pass on those too.</span></span></div>
+</div>
+
+<p class="sub" style="margin-top:30px">README and the written report were also rewritten in this voice — separate files,
+not shown here. On your OK I'll apply everything and redeploy.</p>
+</div>

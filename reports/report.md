@@ -1,208 +1,194 @@
 # ballpark: context-adjusted valuation from public IPL data
 
-**~1,900 words. Live app: https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/ · Code: https://github.com/AbirChakraborty1/ballpark**
+**Live app: https://ballpark-mkmljvquubqdhwezbkgdtg.streamlit.app/ · Code: https://github.com/AbirChakraborty1/ballpark**
 
-## The problem
+## What bugged me
 
-A batting strike rate of 175 in the death overs means one thing off 800 balls
-and something completely different off 40. A boundary in the third over of a
-flat chase is not worth the same as a boundary in the nineteenth defending
-eight-an-over. Raw T20 statistics are **context-blind** and, for anything
-sliced finely enough to be tactically useful, **small-sample-noisy**. Every
-number a coach actually wants — "who is the best death bowler", "does this
-batter struggle against wrist-spin", "should we have held a bowler back" —
-sits exactly where those two problems bite hardest.
+A strike rate of 175 in the death overs means something off 800 balls. Off 40,
+it means almost nothing. And a six in the third over of a flat chase is not the
+same thing as a six in the nineteenth defending nine an over, but average and
+strike rate treat them identically. Almost every question worth asking about a
+T20 player — is he actually a death bowler, does he really struggle against
+wrist spin, was that the right bowler for the 18th — runs straight into one or
+both of those.
 
-`ballpark` rebuilds the conceptual core of a context-adjusted valuation engine
-from cricsheet ball-by-ball data (1,243 IPL matches, 2008–2026; 295,732
-deliveries). It has no ball tracking, no fielding positions, no pitch maps.
-That is deliberate: the project is not an attempt to compete on data. It is an
-attempt to get the **modelling judgement** right — temporal validation,
-calibration, and shrinkage of small-sample player effects — on data anyone can
-download.
+I'm a cricket fan, not an analyst by trade, and I wanted to see how far you can
+get on those questions with nothing but public ball-by-ball data. `ballpark` is
+what came out: an expected-runs model, a calibrated win-probability model, and
+player ratings that get regressed toward average when the sample is thin. Built
+from Cricsheet — 1,243 IPL matches, 2008 to 2026, 295,732 deliveries. No
+ball-tracking, no field settings, no pitch maps. I wasn't trying to compete on
+data. I wanted to get the method right and see what it turned up.
 
-## Why raw numbers mislead, concretely
+## The two problems, separately
 
-Two mechanisms, and the whole design follows from separating them.
+**Situation.** What a ball is worth depends on the state of the game: the phase,
+wickets in hand, the required rate, whether the batter is set. If you don't
+model that, a player who happened to bat more often when it was easy looks
+better than one who didn't. The fix is a model of expected runs off the bat that
+only knows the match state, nothing about who's involved — an average batter
+against an average bowler, right here. Everything else gets measured against
+that.
 
-**Context.** The run value of a delivery depends on the match state — phase,
-wickets in hand, required rate, how set the batter is. If you do not model that
-state, a player who batted more often in easy situations looks more skilful
-than one who did not. The fix is an **expected-runs model** conditioned only on
-state and deliberately blind to player identity: the neutral baseline that says
-what an average batter–bowler pair produces *in exactly this situation*.
-Everything downstream is measured against it.
-
-**Sample size.** Once you slice to "this batter, this over range, this kind of
-bowling", you have tens of balls, and the observed rate is mostly noise. The
-fix is **partial pooling**: estimate each player's effect under a prior that
-pulls short careers toward the population mean, with the strength of the pull
-chosen by cross-validation.
+**Sample size.** Slice to "this batter, these overs, this kind of bowling" and
+you're down to tens of balls. Whatever number you read off is mostly noise. The
+fix is to pull every estimate back toward what players like him generally do,
+harder the less data there is behind it, with the strength of the pull chosen by
+cross-validation rather than by feel.
 
 ## The models
 
-**Layer 1 — expected runs and wickets.** A LightGBM multiclass model over runs
-off the bat `{0,1,2,3,4,5,6}`, plus binary heads for dismissal and extras,
-conditioned on 27 state features. Two features that public IPL work
-usually omits matter here: `striker_balls_faced` (the "set batter" effect) and
-recency weights — IPL scoring per ball rose 18% between 2021 and 2024–26, so
-each ball is down-weighted by `0.5 ** (age_in_seasons / 1.5)`, a half-life
-tuned only on pre-2024 walk-forward seasons.
+**Layer 1 — expected runs and wickets.** A gradient-boosted model over what
+comes off the bat — 0 through 6 — plus separate heads for a dismissal and for
+an extra, on 27 features describing the state. Two of those features matter more
+than people expect. One is how many balls the striker has faced this innings:
+a batter twenty balls in scores a lot faster than one who's just walked out, and
+a model that ignores that is going to be wrong. The other is recency. IPL
+scoring per ball went up about 18% between 2021 and 2024–26, so each ball is
+down-weighted by its age, with the half-life tuned only on seasons up to 2023.
 
-**Layer 2 — win probability.** The second innings is a clean supervised
-problem: `P(chasing team wins | state)`. The first innings is modelled directly,
-with a separate quantile model projecting the final-score distribution for the
-fan chart. The hard part is **sample size again**: a chase contributes ~120
-rows that share one outcome, so 85,000 balls carry ~1,000 independent
-observations. Left unconstrained a gradient-boosted model memorises match
-trajectories — AUC 0.85 and a log loss *worse than guessing 50%*. The shipped
-model is a deliberately blunt GBM (15 leaves, 2,000 samples per leaf, no
-recency decay because chase dynamics do not drift) blended with a logistic
-regression on required rate, wickets and balls (weight 0.2 on the GBM — see
-below), then isotonically calibrated on **cross-validated** predictions rather
-than a held-out tail of seasons too short to estimate a calibration map.
+**Layer 2 — win probability.** The second innings is the clean version of the
+problem: P(chasing side wins | state). The first innings is done directly, with
+a separate model projecting the final total for the fan chart on the replay
+page. The catch is sample size again. A chase is one result spread across ~120
+balls, so 85,000 rows carry maybe a thousand real observations. Let a boosted
+model loose on that and it memorises the shape of individual games: great AUC,
+and probabilities so overconfident the log loss is worse than saying 50% every
+ball. So the model that ships is a blunt tree — 15 leaves, big leaves, no
+recency decay because chase maths doesn't drift — blended four-to-one with a
+plain regression on required rate, wickets and balls, and then calibrated on
+held-out predictions rather than on a tail of recent seasons — one season is
+about 70 games, nowhere near enough to fit a calibration curve.
 
-**Layer 3 — player impact.** Two numbers per player. **Wins added** is
-`Σ (P(win | after ball) − P(win | before ball))`, attributed to striker, bowler
-and — via cricsheet's new `fielder_*` fields — the fielder on catches and
-run-outs. It is descriptive: it rewards high-leverage contributions, which is
-the point of a context statistic, but leverage is mostly handed to a player by
-circumstance. **Shrunk true rate** is the skill estimate: runs above the
-Layer-1 expectation, regressed on one-hot batter and bowler columns under an L2
-penalty. Ridge on an offset is not a shortcut around a hierarchical model — an
-L2 penalty on player effects *is* a Gaussian prior centred on average, so the
-coefficients are posterior means and the CV-selected penalty is the prior
-variance. It fits in seconds where a crossed-effects mixed model would not fit
-at all. Intervals come from a block bootstrap over whole matches.
+**Layer 3 — player impact.** Two numbers. *Wins added* is the sum of the
+win-probability swing on every ball a player was part of, credited to the
+striker, the bowler, and — using Cricsheet's newer fielder fields — the fielder
+on catches and run-outs. It rewards doing things when the game's in the balance,
+which is the point, but it also rewards batting three in a strong side, so it's
+a record of what happened rather than a skill rating. The *shrunk rate* is the
+skill read: runs above the Layer-1 expectation, regressed on one-hot batter and
+bowler columns with an L2 penalty. That penalty is the same thing as a prior on
+every player centred on average — the coefficients are posterior means and
+cross-validation picks the prior's tightness. It fits in seconds where a proper
+crossed mixed model wouldn't fit at all. The ranges come from resampling whole
+matches.
 
-**Layer 4 — matchups, simulation, tactics.** A ridge GLM adds batter × bowler-
-archetype interaction terms (pace/spin × arm × wrist/finger, six archetypes); a
-thin interaction is penalised to zero, at which point the prediction falls back
-to the archetype prior. A vectorised Monte Carlo engine plays innings out from
-any state. A bowling-change optimiser searches every legal allocation of the
-remaining overs and returns the one that minimises the batting side's win
-probability.
+**Layer 4 — matchups, simulation, tactics.** The matchup model adds batter ×
+bowling-type columns to the same regression (six types: pace and spin, by arm,
+finger and wrist). A type a batter has barely faced gets penalised toward zero,
+so the prediction falls back to how batters like him do against it. There's a
+vectorised innings simulator, and a bowling-change optimiser that tries every
+legal way to bowl out a chase and picks the one that gives the batting side the
+worst odds.
 
-## Validation and calibration evidence
+## How the models were checked
 
-Everything is **walk-forward**: for each season *t*, train on all prior seasons
-and score *t*. A frozen split (train ≤ 2021, test 2024–26, touched once) is kept
-only as a drift stress-test. Leakage is enforced by a test that rebuilds the
-state table from a truncated innings and asserts the surviving rows are
-bit-identical, and by a test that no match appears in two splits.
+Everything is scored season by season: for each season, train on every season
+before it, score that one. That's how you'd retrain it in use, so it's the only
+honest read on how it does live. A frozen split (train to 2021, test 2024–26,
+looked at once) is kept as a check on staleness. Leakage is checked by code —
+one test rebuilds the feature table from a cut-short innings and checks the
+surviving rows are byte-identical; another checks no match ends up in two
+splits.
 
-| model | metric | ballpark | baseline | baseline is |
+| model | measure | ballpark | to beat | what that is |
 |---|---|---|---|---|
-| Layer 1 xRuns | RMSE (walk-fwd) | **1.682** | 1.694 | runs by over × wickets |
+| Layer 1 xRuns | error, season-by-season | **1.682** | 1.694 | runs by over × wickets |
 | Layer 1 xRuns | bias | **−0.056** /ball | — | — |
 | Layer 1 wicket | log loss | **0.194** | 0.195 | rate by over × wickets |
-| Layer 2 WP | Brier, 2024–26 test | **0.182** | 0.190 | logistic on RR / wkts / balls |
-| Layer 2 WP | 2nd-innings AUC | **0.88** | — | — |
-| Layer 2 WP | ECE, all balls | **0.023** | — | — |
-| Layer 4 matchup | mean \|effect\|/100 | **7.5** | 38.9 | unshrunk raw split |
+| Layer 2 win prob | Brier, 2024–26 | **0.182** | 0.190 | regression on rate / wickets / balls |
+| Layer 2 win prob | 2nd-innings AUC | **0.88** | — | — |
+| Layer 2 win prob | calibration error | **0.023** | — | — |
+| Layer 4 matchup | avg \|effect\| /100 | **7.5** | 38.9 | the raw split |
 
-The Layer 1 margin over a strong conditional-mean baseline is small — ball
-outcome is mostly irreducible noise, and pretending otherwise would be the
-warning sign. There is one known bias: walk-forward xRuns runs ~4% (0.056
-runs/ball) *below* actual, because a model trained only on prior seasons cannot
-anticipate this year's scoring inflation. It is a near-constant offset — it
-shifts every player's "above expectation" by the same amount and so leaves the
-Layer 3 *rankings* intact — but it is a real limitation, not something to
-paper over.
+Layer 1 only just clears a good conditional average, and that's the right
+result — one ball is a 0, a 4 or a wicket, so most of the error isn't
+model-able. The one thing to flag is that bias: because it only trains on past
+seasons, xRuns comes in about 0.056 runs a ball below reality — it can't see
+this year's scoring going up. It's close to a flat offset, so it shifts every
+player's "above expected" by the same amount and leaves the order alone. But
+it's a real limitation and I'd rather say so.
 
-The Layer 2 story is the one worth being candid about. **The second innings is
-largely a rate problem.** A three-number logistic regression is a genuinely
-strong model. On the untouched 2024–26 test set the shipped blend beats it on
-the pooled metrics (Brier 0.182 vs 0.190, log loss 0.550 vs 0.555), but on
-second-innings balls alone the plain logistic is level with it — recent rule
-changes (the Impact Player, deeper batting orders) have made chases *more*
-rate-driven, not less, so the GBM's weight in the blend is deliberately only
-0.2. The blend earns its keep on what the logistic cannot do: the first
-innings, the projected-score fan, phase-wise calibration (reliability is within
-~3 points of the diagonal in every phase of the second innings), and supplying
-the per-ball win-probability deltas Layer 3 depends on.
+Layer 2 is the one to be straight about. **A run chase is mostly about the
+rate.** A three-number regression is already strong, and on the untouched
+2024–26 seasons it's about level with the boosted model on second-innings balls —
+slightly ahead on log loss. If anything the Impact Player rule and deeper
+line-ups have made chases more rate-driven. So the tree only gets a fifth of the
+weight. It earns that on the things the regression can't do: the first innings,
+the projected-total fan, calibration that holds across the phases (within about
+3 points of the line everywhere in the second innings), and the ball-by-ball
+swings that Layer 3 needs.
 
-## Three findings
+## Three things that came out of it
 
-**1. Most of a "matchup" is noise.** Across 692 batter-vs-archetype cells with
-at least 40 balls, the mean absolute *raw* deviation from expectation is 38.9
-runs per 100 balls. After shrinkage it is **7.5** — nineteen percent of the
-raw figure. Real archetype effects exist: off-spin is genuinely economical
-(−5.0 runs/100 vs an average batter), leg-spin genuinely expensive (+6.3). But
-the batter-*specific* "he can't play left-arm spin" interaction, once penalised
-for its sample size, is about a fifth of what a 40-ball television split
-implies.
+**1. Most of a "matchup" is a small sample talking.** Across 692 batter × type
+pairings with at least 40 balls behind them, the average gap from expected is
+38.9 runs per 100 balls. Regress each one for how thin it is and that drops to
+7.5 — nineteen percent. The type-level effects are real: off-spin goes for
+about 5 runs/100 less than average, the leggie for about 6 more. It's the
+personal "he can't play it" part that mostly isn't there once you account for
+the 40 balls it's built on.
 
-**2. Raw "runs above expected" massively overstates short careers.** Among
-players with 200+ balls, the standard deviation of the naive raw-minus-expected
-metric is 12.9 runs/100; the shrunk estimate's is 8.4, and for players under
-150 balls the naive spread of 56 collapses to 4. The players who move most
-between the two lists — flattered by small hot streaks, or dragged down by
-cold ones — are the ones a raw leaderboard gets most wrong. Josh
-Fraser-McGurk's naive +65 runs/100 becomes a still-excellent but human +23;
-Chris Morris's +23 becomes +1.
+**2. Raw "runs above expected" massively overrates short careers.** Among
+players with 200+ balls, the spread of the raw number is 12.9 runs/100; the
+shrunk one is 8.4. Under 150 balls the raw spread of 56 collapses to 4. The
+players who jump most between the two lists — a hot streak here, a cold run
+there — are exactly the ones a raw table gets wrong. Fraser-McGurk's raw +65
+runs/100 becomes a still-very-good +23; Chris Morris's +23 becomes +1.
 
-**3. Death bowling is the scarcest skill in the auction.** The bowlers whose
-shrunk effect survives with the tightest intervals and the largest magnitude —
-Bumrah (36 runs saved per 100 balls, 95% interval 30–42), Narine, Rashid Khan —
-are almost all death or middle-overs specialists, and the gap between them and
-the median bowler is far wider than the equivalent gap among batters. Wins
-added tells the same story from the leverage side: the highest per-ball WPA
-contributions in the data are concentrated in overs 16–20.
+**3. Death bowling is the scarcest thing in the auction.** The bowlers whose
+shrunk number holds up with the tightest range and the biggest edge — Bumrah
+(36 runs saved per 100, 95% range 30–42), Narine, Rashid — are nearly all death
+or middle-overs men, and the gap from them to a median bowler is far wider than
+the equivalent gap among batters. Wins added says the same from the other end:
+the highest per-ball swings in the data sit in overs 16 to 20.
 
-## The tactics engine, on one real over
+## The optimiser on one over
 
-The optimiser searches every legal allocation of the remaining overs across the
-bowlers with quota left — each over scored by expected runs shifted by the
-bowler's shrunk Layer-3 effect, the projected total mapped through Layer 2 —
-and returns the one that minimises the chasing side's win probability. Run over
-all 1,186 close-finish states in the data, **it agrees with the captain exactly
-94% of the time**. The value is in the tail.
+Run over all 1,186 tight finishes in the data, the optimiser lands on the exact
+allocation the captain used **94% of the time**. The gap between a front-line
+over and a fifth bowler's is three or four runs, so usually there's nothing to
+argue about.
 
-**2019, Sunrisers Hyderabad v Delhi Capitals, Visakhapatnam.** DC, chasing 163,
-needed 42 off 24 starting the 17th over. SRH's captain gave Basil Thampi — a
-medium-pacer — the 18th, between Bhuvneshwar Kumar and Khaleel Ahmed. The
-optimiser instead alternates Bhuvneshwar and Khaleel through all four overs. The
-projected DC total barely moves (161.2 either way), but that projection sits one
-run short of the target, and at 42-needed-off-24 the win-probability curve is
-steep enough that the sub-run difference reads as **7 points** — 70% down to
-63%. DC won by five wickets.
+Take SRH v DC at Visakhapatnam in 2019. DC needed 42 off 24 starting the 17th,
+five down. SRH's captain gave Basil Thampi the 18th, between Bhuvneshwar and
+Khaleel. The optimiser would have alternated Bhuvi and Khaleel through all four.
+The projected DC total barely moves — 161 either way — but that's a run short of
+the target, and at 42-off-24 the win-probability curve is steep enough that the
+sub-run difference shows up as about 7 points, 70% down to 63%. DC won by five
+wickets.
 
-That is the honest shape of it. Bowler-quality edges at the death are real but
-small — a front-line over saves perhaps three or four runs over a part-timer's —
-so most of the time the optimiser and the captain land on the same allocation.
-The twenty-two states where the swing exceeds 15 points are all cases where one
-allocation's projected total crosses the target and the other's does not: the
-model is near-certain in both directions and a handful of runs flips it.
+That's the shape of it. Bowler-quality edges at the death are real but small.
+The 22 finishes where the swing tops 15 points are all cases where one
+allocation's projected total clears the target and the other's doesn't — the
+model's near-certain both ways and a handful of runs flips it.
 
-## Limitations
+## What it can't see
 
-No ball tracking, so no line, length, pace off the pitch or field settings —
-every archetype is a coarse proxy for what tracking measures directly. Batter
-handedness is not in cricsheet and is hand-curated for the top ~320 players
-(~90% of balls have a curated batter, ~87% a curated bowler, ~79% both); the
-rest fall back to the archetype prior in the matchup model. The
-simulator models bowling as league-average unless given a plan and does not
-track strike ball-to-ball. The optimiser is an expected-value rollout. IPL only
-— league is one config line, but nothing has been retrained on other
-competitions.
+No ball-tracking, so no line, length, pace off the pitch or field. Every
+bowling "type" is a rough stand-in for what Hawk-Eye would give you directly.
+Bowling styles aren't in Cricsheet — I typed them in for the ~320 most-used
+players, covering roughly 90% of balls faced and 87% bowled; the rest fall back
+to the type-level number. The simulator treats bowling as average unless given a
+plan and doesn't track the strike ball to ball. The optimiser rolls expected
+values forward rather than simulating. IPL only — adding another league is a
+config line and a download, but I haven't re-checked anything on the BBL or PSL.
 
 ## What I'd build first with ball-tracking data
 
-1. **Replace archetypes with release-point and trajectory clusters.** The
-   matchup model is starved of the one thing that makes a matchup real: what
-   the ball actually does. Cluster deliveries by line / length / pace, then
-   estimate batter effects against those clusters.
-2. **A shot-quality model** — xRuns conditioned on false-shot rate,
-   beaten-edge and contact quality. This would separate a batter riding luck
-   from one middling everything, which is the single largest source of residual
-   noise in Layer 3.
-3. **Fielding impact from tracked positions** — range, boundaries saved,
-   pressure created. `fielder_*` only captures the wicket-ending events; the
-   rest is a genuinely under-measured skill and the fastest available win.
-4. **In-spell bowler fatigue** — over-to-over pace decline, which the current
-   `spell_over` feature only gestures at.
+1. **Cluster deliveries by where they land and how fast, and rate batters
+   against those clusters** — the actual ball instead of "the leggie". The
+   matchup model is starved of the one thing that makes a matchup real.
+2. **A shot-quality model.** xRuns that also knew the false-shot rate, whether
+   the batter was beaten, how cleanly he middled it — that separates a batter
+   riding his luck from one in control, which is the biggest source of noise
+   left in the player numbers.
+3. **Fielding.** The data here only catches the wicket-ending events. Range,
+   boundaries saved, the pressure a gun fielder creates — badly under-measured,
+   and probably the quickest thing to get right.
+4. **How a bowler fades within a spell** — pace dropping off over to over, which
+   right now the model barely touches.
 
-*ballpark is a demonstration of method, not a product. The interesting question
-is what the same shrinkage and calibration discipline does when pointed at data
-that can actually see the ball.*
+The whole thing is really a proof of method. What I'd like to know is what the
+same approach — checking it season by season, calibrating it, regressing the
+small samples — does when it's pointed at data that can actually see the ball.

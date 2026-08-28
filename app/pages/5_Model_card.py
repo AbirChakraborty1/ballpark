@@ -1,4 +1,4 @@
-"""Model card: what is validated, what is not, and what the data cannot see."""
+"""Model card: what holds up, what doesn't, and what the data can't see."""
 from __future__ import annotations
 
 import streamlit as st
@@ -6,43 +6,49 @@ import streamlit as st
 from _data import figure, metrics, page_header
 
 page_header("Model card",
-            "Publishing where the model is wrong is the point of this page.")
+            "The part where I say where the models fall short. Most cricket "
+            "models don't, and I think that's a mistake.")
 
 m = metrics()
 
-st.header("Validation protocol")
+st.header("How the models were checked")
 st.markdown(
     """
-    * **Walk-forward** is primary: for each season *t*, train on every prior
-      season and score *t*. That is how a model in service is retrained, so it
-      is the only honest estimate of deployed accuracy.
-    * A **frozen split** (train ≤ 2021, validate 2022–23, test 2024–26) is kept
-      as a drift stress-test. It is touched once.
-    * **Leakage** is enforced mechanically: a test rebuilds the state table from
-      a truncated innings and asserts the surviving rows are bit-identical, and
-      another asserts no match ID appears in two splits.
+    * **Season by season.** For each season, the model is trained on every
+      season before it and scored on that one — the way you'd actually retrain
+      it if it were in use. Nothing is scored on data it was trained on.
+    * A **frozen split** (train up to 2021, test 2024–26) is kept separately and
+      looked at once, as a check on how badly a model goes stale if you *don't*
+      retrain it.
+    * **Leakage** is checked by code, not by reading it back: one test rebuilds
+      the per-ball features from a cut-short innings and checks the rows that
+      survive are byte-for-byte identical; another checks no match ends up in
+      two different splits.
     """
 )
 
 if m:
-    st.header("Layer 1 — expected runs / wickets")
+    st.header("Layer 1 — expected runs and wickets")
     x = m["layer1_xruns"]
     c1, c2, c3 = st.columns(3)
-    c1.metric("xRuns RMSE", f"{x['walk_forward_rmse']:.3f}",
-              f"{x['walk_forward_rmse'] - x['baseline_rmse']:+.3f} vs over×wickets baseline",
+    c1.metric("xRuns error (runs/ball)", f"{x['walk_forward_rmse']:.3f}",
+              f"{x['walk_forward_rmse'] - x['baseline_rmse']:+.3f} vs an over×wickets average",
               delta_color="inverse")
-    c2.metric("xRuns bias", f"{x['walk_forward_bias']:+.3f}", "runs/ball, walk-forward")
+    c2.metric("runs below actual", f"{x['walk_forward_bias']:+.3f}", "per ball")
     c3.metric("wicket log loss", f"{x['wicket_log_loss']:.3f}",
-              f"{x['wicket_log_loss'] - x['wicket_baseline_log_loss']:+.3f} vs baseline",
+              f"{x['wicket_log_loss'] - x['wicket_baseline_log_loss']:+.3f} vs a phase average",
               delta_color="inverse")
     st.markdown(
-        "The margin over a strong conditional-mean baseline is **small** — ball "
-        "outcome is mostly irreducible noise. Layer 1 earns its place as a "
-        "context baseline, not a sharp point predictor. One known bias: "
-        "walk-forward xRuns runs ~4% (0.056 runs/ball) *below* actual, because a "
-        "model trained only on prior seasons can't see this year's scoring "
-        "inflation. It is a near-constant offset, so it leaves the Layer-3 "
-        "*rankings* intact — but it is disclosed, not corrected away."
+        "It only just beats a decent conditional average, and that's expected — "
+        "a single ball is a 0, a 4 or a wicket, so most of the error is just "
+        "noise you can't model away. xRuns isn't meant to call the next ball; "
+        "it's meant to be an unbiased yardstick everything else is measured "
+        "against. One known problem: because it only ever trains on past "
+        "seasons, it runs about 0.056 runs a ball below what actually happens — "
+        "it can't see this year's scoring going up. That's a roughly flat "
+        "offset, so it moves everyone's number by the same amount and doesn't "
+        "change the order. But it's there, and I'd rather flag it than quietly "
+        "correct it."
     )
     if figure("xruns_by_phase.png"):
         st.image(str(figure("xruns_by_phase.png")))
@@ -51,24 +57,26 @@ if m:
     wp = m["layer2_winprob"]
     c1, c2, c3 = st.columns(3)
     c1.metric("Brier, test seasons", f"{wp['test_brier']:.3f}",
-              f"{wp['test_brier'] - wp['test_base_brier']:+.3f} vs RRR logistic",
+              f"{wp['test_brier'] - wp['test_base_brier']:+.3f} vs required-rate model",
               delta_color="inverse")
     c2.metric("2nd-innings AUC", f"{wp['innings2_auc']:.3f}")
-    c3.metric("all-ball ECE", f"{wp['all_ball_ece']:.3f}")
+    c3.metric("calibration error, all balls", f"{wp['all_ball_ece']:.3f}")
     st.markdown(
         """
-        The honest headline: **the second innings is largely a rate problem.**
-        A logistic regression on required rate, wickets in hand and balls
-        remaining is a genuinely strong model, and on the untouched 2024–26 test
-        set it is level with — on log loss, slightly ahead of — the blended
-        gradient-boosted model. Recent rule changes (the Impact Player,
-        deeper batting orders) have made chases *more* rate-driven, not less.
+        Put plainly: **a run chase is mostly about the run rate.**
+        A plain regression on required rate, wickets in hand and balls left is
+        already a strong model, and on the untouched 2024–26 seasons it's about
+        level with the fancier gradient-boosted one on second-innings balls — a
+        touch ahead on log loss. The Impact Player rule and deeper batting
+        line-ups have if anything made chases *more* rate-driven.
 
-        The complex model earns its keep on the things the logistic cannot do:
-        the **first innings**, the **projected-score fan chart**, **phase-wise
-        calibration**, and supplying the per-ball win-probability deltas that
-        Layer 3 is built on. It is calibrated out-of-fold (isotonic on
-        cross-validated predictions, never on a held-out tail of seasons).
+        So the tree only gets a fifth of the weight in the blend. It earns that
+        on the things the regression can't do: the first innings, the
+        projected-total fan on the replay page, keeping the probabilities
+        calibrated across the phases, and producing the ball-by-ball swings the
+        Players tab adds up. Calibration is done on held-out predictions, never
+        on a tail of recent seasons — one season is about 70 games, nowhere near
+        enough to fit a calibration curve.
         """
     )
     col1, col2 = st.columns(2)
@@ -80,15 +88,17 @@ if m:
     st.header("Layer 3 — player impact")
     im = m["layer3_impact"]
     st.markdown(
-        f"Effects are ridge coefficients on runs above expectation — "
-        f"mathematically an empirical-Bayes prior centred on average, with the "
-        f"CV-selected penalty *as* the shrinkage. **{im['n_players_scored']}** "
-        f"players scored. Intervals are a block bootstrap over whole matches."
+        f"The shrunk numbers are ridge-regression coefficients on runs above "
+        f"expected — which is the same thing as putting a prior on every player "
+        f"centred on average, with the amount of shrinkage picked by "
+        f"cross-validation. **{im['n_players_scored']}** players get a number. "
+        f"The 95% ranges come from resampling whole matches, not individual "
+        f"balls, because balls in the same match aren't independent."
     )
     cc = st.columns(2)
-    cc[0].caption("Most overrated by raw runs-above-expected")
+    cc[0].caption("Raw numbers flatter them most")
     cc[0].dataframe(im["overrated_by_raw"], hide_index=True)
-    cc[1].caption("Most underrated by raw runs-above-expected")
+    cc[1].caption("Raw numbers sell them shortest")
     cc[1].dataframe(im["underrated_by_raw"], hide_index=True)
     c1, c2 = st.columns(2)
     if figure("scatter_bat.png"):
@@ -98,53 +108,53 @@ if m:
 
     st.header("Layer 4 — matchups")
     mu = m["layer4_matchup"]
-    st.metric("shrinkage ratio", f"{mu['shrinkage_ratio']:.2f}",
+    st.metric("of a raw matchup split, this much is real", f"{mu['shrinkage_ratio']:.0%}",
               f"raw {mu['mean_abs_raw_split_per_100']:.0f} → shrunk "
-              f"{mu['mean_abs_shrunk_delta_per_100']:.0f} runs/100")
+              f"{mu['mean_abs_shrunk_delta_per_100']:.0f} runs per 100")
     st.markdown(
-        "Roughly **four-fifths** of a raw batter-vs-archetype split is sampling "
-        "noise. Real matchup effects exist — off-spin is genuinely economical, "
-        "leg-spin genuinely expensive — but batter-specific interactions are "
-        "small once penalised."
+        "About four-fifths of a raw batter-vs-type split is small-sample wobble. "
+        "The type-level effects are real — off-spin goes for about 5 runs/100 "
+        "less than average, the leggie for about 6 more — but the *personal* "
+        "matchup, once you account for how thin it is, is usually not much."
     )
 
-st.header("Known failure modes & limitations")
+st.header("What it can't see, and what I've left out")
 st.markdown(
     """
-    * **No ball tracking.** No line/length, no pace off the pitch, no spin
-      revs, no fielding positions, no pitch map. Every "archetype" here is a
-      coarse proxy for what tracking data measures directly.
-    * **No batter handedness in the source.** `reference/players_meta.csv` is
-      hand-curated for the ~320 highest-volume players (~90% of balls have a
-      curated batter, ~87% a curated bowler, ~79% both); the rest fall back to
-      the archetype prior in the matchup model.
-    * **The simulator** models bowling as league-average unless given a plan,
-      does not track who is on strike ball to ball, and ignores byes and wides
-      off the simulated bat.
-    * **The optimiser** is an expected-value rollout, not a full simulation,
-      and cannot see field settings or the specific batters at the crease.
-    * **Super overs, abandoned matches and DLS first innings** are excluded
-      from training; a handful of seven-ball overs (umpiring miscounts) are
-      kept as-is.
-    * **IPL only.** League is one config parameter, but the models have not
-      been retrained or revalidated on BBL/PSL/international T20s.
+    * **No ball-tracking.** No line, no length, no pace off the pitch, no revs,
+      no field settings, no pitch map. "The leggie" here is a stand-in for what
+      Hawk-Eye would tell you directly.
+    * **Bowling styles aren't in the data.** I typed them in by hand for the
+      ~320 most-used players — enough to cover ~90% of balls faced and ~87% of
+      balls bowled. The rest fall back to the type-level number.
+    * **The simulator** treats bowling as average unless you give it a plan,
+      doesn't track who's on strike ball to ball, and skips byes and wides off
+      the bat.
+    * **The optimiser** rolls forward expected values rather than simulating,
+      and can't see the field or which batters are in.
+    * **Super overs, no-results and DLS first innings** are left out of
+      training. Four overs in IPL history have seven legal balls (umpires
+      miscounting) — those are kept as they are.
+    * **IPL only.** Adding another league is a one-line config change and a
+      download, but I haven't retrained or re-checked anything on the BBL, PSL
+      or internationals.
     """
 )
 
 st.header("What I'd build first with ball-tracking data")
 st.markdown(
     """
-    1. **Replace archetypes with release-point + trajectory clusters.** The
-       matchup model is currently starved of the one thing that makes a matchup
-       real: what the ball actually does. Line/length/pace clusters per bowler,
-       then batter effects against *those*.
-    2. **A shot-quality model.** xRuns conditioned on beaten-edge, false-shot
-       and contact-quality would separate a batter riding luck from one
-       middling everything — the single biggest source of noise in Layer 3.
-    3. **Fielding impact from tracked positions.** `fielder_*` gives catches and
-       run-outs; tracking gives range, saved boundaries and pressure. That is a
-       genuinely under-measured skill and the fastest win.
-    4. **Bowler fatigue and match-ups within a spell** — pace drop-off over-to-
-       over, which the current spell-over feature only gestures at.
+    1. **Cluster deliveries by where they pitch and how fast, and rate batters
+       against those clusters** — instead of "the leggie", the actual ball. The
+       matchup model is starved of the one thing that makes a matchup real.
+    2. **A shot-quality model.** xRuns that also knew the false-shot rate,
+       whether the batter was beaten, how well he middled it. That would tell a
+       batter riding his luck apart from one in complete control — the single
+       biggest source of noise left in the player numbers.
+    3. **Fielding.** The data here only catches the wicket-ending stuff. Range,
+       boundaries saved, the pressure a gun fielder puts on — badly
+       under-measured, and probably the quickest thing to get right.
+    4. **How a bowler fades within a spell** — pace dropping off over to over,
+       which the model barely touches right now.
     """
 )

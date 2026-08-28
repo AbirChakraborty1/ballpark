@@ -17,18 +17,21 @@ from _data import page_header
 
 page_header(
     "Full-match simulator",
-    "Upload any Cricsheet T20 zip, pick two line-ups and a venue, and simulate "
-    "the match ball by ball — recency-weighted profiles, Elo opponent strength, "
-    "a pace/spin match-up, set-batter and momentum tilts, and a calibrated "
-    "win probability, all fit from the data you load.",
+    "Load a Cricsheet T20 zip, set two line-ups and a venue, and it plays the "
+    "game out ball by ball. Each player's profile is his own recent form, "
+    "weighted toward strong opposition; the ball outcome mixes the batter and "
+    "the bowler, adjusts for who's set and how the last few overs have gone, "
+    "and the win probability at the end is calibrated. All of it fit from the "
+    "data you load.",
 )
 
 st.info(
-    "This page is a **self-contained tool**, separate from the trained-model "
-    "pages above. Everything runs in your browser — the zip you upload never "
-    "leaves your machine. Grab a dump from "
-    "[cricsheet.org](https://cricsheet.org/downloads/) (any men's T20 set works). "
-    "The tool scrolls inside its own frame.",
+    "A separate tool from the pages above — those use models I trained "
+    "offline on the IPL; this one builds everything on the fly from whatever "
+    "you give it. It runs entirely in your browser, so the zip never leaves "
+    "your machine. Any men's T20 set from "
+    "[cricsheet.org](https://cricsheet.org/downloads/) works. It scrolls inside "
+    "its own frame below.",
     icon="📦",
 )
 
