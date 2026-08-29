@@ -68,9 +68,9 @@ st.markdown(
     """
     ### Where to look first
 
-    1. **Match replay** — pick a game, watch the win-probability line swing, see
-       the projected first-innings total narrow ball by ball, and the deliveries
-       that turned it.
+    1. **Match replay** — pick a game, watch each side's win-probability line
+       swing with the wickets marked, see the projected first-innings total
+       narrow ball by ball, and the deliveries that turned it.
     2. **Players** — the same leaderboard raw and shrunk, side by side. Watch the
        small-sample names slide back toward the pack when you switch it on.
     3. **Matchups** — pull up a "he can't play the leggie" reputation and see how

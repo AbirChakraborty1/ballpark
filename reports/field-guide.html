@@ -317,21 +317,23 @@ Sum that over all 20 buckets → <span class="g">0.023</span>.</pre>
       <span class="tab-eyebrow">Tab 01 · one match, ball by ball</span>
       <h2>Match replay</h2>
     </div>
-    <p class="lead">Pick a match. Three things: the win-probability line over both
-      innings, the projected first-innings total as a fan, and a table of the
-      deliveries that moved it most.</p>
+    <p class="lead">Pick a match. Three things: the win-probability lines over
+      both innings with wickets marked, the projected first-innings total as a
+      fan, and a table of the deliveries that moved it most.</p>
 
     <div class="piece">
       <span class="piece-tag">Chart</span>
-      <h3>Win‑probability ribbon <span class="sub">y = P(team batting first wins) · x = ball number</span></h3>
+      <h3>Win‑probability lines <span class="sub">y = P(win) · x = ball number · one line per side</span></h3>
       <dl class="qa">
         <dt>What it shows</dt>
-        <dd>One line: the probability the team that batted first ends up winning,
+        <dd>Two lines that add to 100% — each side's probability of winning,
           recalculated after every legal ball. A dotted line at 50%, a vertical
-          rule at the innings break. The line for first‑innings balls is the
-          model's <code>win_prob</code> directly; for the chase it is plotted as
-          <code>1 − win_prob</code>, because <code>win_prob</code> always refers to
-          the side <em>currently batting</em> and in the chase that's the other team.</dd>
+          rule at the innings break, and a circle at every wicket (hover for the
+          batsman and how he went — "c Patidar b Hazlewood"). The line for
+          first‑innings balls is the model's <code>win_prob</code> directly; for
+          the chase it is <code>1 − win_prob</code>, because <code>win_prob</code>
+          always refers to the side <em>currently batting</em> and in the chase
+          that's the other team.</dd>
         <dt>Why it's useful</dt>
         <dd>You can see which over a match turned, and by how much. It's also what
           every "wins added" number in the Players tab is built from.</dd>

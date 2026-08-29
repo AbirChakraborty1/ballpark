@@ -67,7 +67,7 @@ The <span class="note">green</span> notes are mine, not app text.</p>
   <div class="row"><span class="tag">metric</span><span class="txt">xRuns error (walk-forward) — <strong>1.682</strong> · −0.012 vs over×wickets average · caption: runs/ball · runs −0.056 low, on purpose (see model card)</span></div>
   <div class="row"><span class="tag">metric</span><span class="txt">how much of a matchup is real — <strong>19%</strong> · caption: raw split 39 → after shrinkage 8 runs/100</span></div>
   <div class="row"><span class="tag">button</span><span class="txt">Where to look first</span></div>
-  <div class="row"><span class="tag">body</span><span class="txt"><strong>1. Match replay</strong> — pick a game, watch the win-probability line swing, see the projected first-innings total narrow ball by ball, and the deliveries that turned it.</span></div>
+  <div class="row"><span class="tag">body</span><span class="txt"><strong>1. Match replay</strong> — pick a game, watch each side's win-probability line swing with the wickets marked, see the projected first-innings total narrow ball by ball, and the deliveries that turned it.</span></div>
   <div class="row"><span class="tag">body</span><span class="txt"><strong>2. Players</strong> — the same leaderboard raw and shrunk, side by side. Watch the small-sample names slide back toward the pack when you switch it on.</span></div>
   <div class="row"><span class="tag">body</span><span class="txt"><strong>3. Matchups</strong> — pull up a "he can't play the leggie" reputation and see how much of it holds up once you account for how few balls it's built on.</span></div>
   <div class="row"><span class="tag">body</span><span class="txt"><strong>4. Tactics</strong> — a bowling-change optimiser run on real death overs. Mostly it does what the captain did. The interesting part is when it doesn't.</span></div>
@@ -80,12 +80,12 @@ The <span class="note">green</span> notes are mine, not app text.</p>
   <h2>1 · Match replay</h2>
   <div class="path">app/pages/1_Match_replay.py</div>
   <div class="row"><span class="tag">head</span><span class="txt">Match replay</span></div>
-  <div class="row"><span class="tag">blurb</span><span class="txt">The win-probability line for a match, ball by ball. Below it, where the first-innings total was projected to land as the innings went on, and the deliveries that swung the game most.</span></div>
+  <div class="row"><span class="tag">blurb</span><span class="txt">The win-probability line for a match, ball by ball — a line for each side, and a marker at every wicket. Below it, where the first-innings total was projected to land as the innings went on, and the deliveries that swung the game most.</span></div>
   <div class="row"><span class="tag">control</span><span class="txt">Match</span> <span class="note">dropdown</span></div>
-  <div class="row"><span class="tag">chart</span><span class="txt">y-axis "win probability", x-axis "ball", legend "{team} to win", dotted line at 50%, vertical line at the innings break</span></div>
-  <div class="row"><span class="tag">caption</span><span class="txt"><strong>{winner}</strong> won. The line tracks {team}'s chances through the game and finishes at {NN}%.</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">y-axis "win probability", x-axis "ball", one line per side ("{team} to win"), dotted line at 50%, vertical line at the innings break, circle markers at each wicket — hover: batsman, dismissal (e.g. "c Patidar b Hazlewood"), side · ball</span></div>
+  <div class="row"><span class="tag">caption</span><span class="txt"><strong>{winner}</strong> won. Each line is one side's chance ball by ball (they add to 100%); {team} finishes at {NN}%. Circles mark the fall of a wicket — hover for who and how.</span></div>
   <div class="row"><span class="tag">button</span><span class="txt">Where the first-innings total was heading</span></div>
-  <div class="row"><span class="tag">chart</span><span class="txt">bands "10–90%" / "30–70%", lines "projected (median)" / "actual score", axes "ball" / "runs"</span></div>
+  <div class="row"><span class="tag">chart</span><span class="txt">bands "10–90%" / "30–70%", lines "projected (median)" / "actual score", circle markers at each first-innings wicket (same hover), axes "ball" / "runs"</span></div>
   <div class="row"><span class="tag">button</span><span class="txt">The deliveries that turned it</span></div>
   <div class="row"><span class="tag">table</span><span class="cols">innings · over · batting · bowler · event · swing to the batting side (win %)</span></div>
   <div class="row"><span class="tag">caption</span><span class="txt">(warning, only if a match has no model data) "This match isn't in the modelled set."</span></div>
