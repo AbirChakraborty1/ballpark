@@ -468,11 +468,13 @@ print(f"mean |shrunk matchup|     {seen.matchup_delta_per_100.abs().mean():.1f} 
 md("### 5.3 · The bowling-change optimiser")
 md(r"""
 An expected-value rollout: for each remaining over, `runs = 6·xRuns(state) −
-bowler_effect·6`, advance the state. The projected total is then treated as a
-spread — `Normal(mean, 2.85·√balls_left)` — and Layer 2 is averaged over it,
-so a knife-edge chase reads near 50/50 instead of snapping to a near-certain
-result. The search keeps the allocation that minimises the chasing side's win
-probability. Section 6.4 makes it interactive; here is one worked state.
+bowler_effect·6` (plus a small penalty for spin in the 19th/20th, which goes
+for ~1 run/over more than pace there), advance the state. The projected total
+is then treated as a spread — `Normal(mean, 2.85·√balls_left)` — and Layer 2
+is averaged over it, so a knife-edge chase reads near 50/50 instead of snapping
+to a near-certain result. The search keeps the allocation that minimises the
+chasing side's win probability. Section 6.4 makes it interactive; here is one
+worked state.
 """)
 code(r"""
 tac = pd.read_parquet(processed("app/tactics.parquet")) if processed("app/tactics.parquet").exists() \

@@ -89,9 +89,10 @@ for alt in row.alternatives.split(" | "):
 st.caption("Scoring an allocation: each remaining over gets the expected runs "
            "and wickets for the match state, nudged by how much better or worse "
            "than average that bowler is — the shrunk rating from the Players "
-           "tab. That gives a projected total, which is then treated as a range "
-           "rather than a single number — a chase can land a couple of overs' "
-           "worth of runs either side of the projection — and the win "
-           "probability is averaged over that range. Quotas and no back-to-back "
-           "overs are kept to. It doesn't know who's on strike or where the "
-           "field is.")
+           "tab — with a small extra cost for spin in the 19th and 20th, which "
+           "goes for about a run an over more than pace there in the data. That "
+           "gives a projected total, which is then treated as a range rather "
+           "than a single number — a chase can land a couple of overs' worth of "
+           "runs either side of the projection — and the win probability is "
+           "averaged over that range. Quotas and no back-to-back overs are kept "
+           "to. It doesn't know who's on strike or where the field is.")

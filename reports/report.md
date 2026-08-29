@@ -150,18 +150,28 @@ the highest per-ball swings in the data sit in overs 16 to 20.
 Run over all 1,180 tight finishes in the data, the optimiser's over-by-over
 plan and the one the captain actually used land **within two win-probability
 points of each other 84% of the time**, and within five points 90% of the time.
-Seven finishes out of 1,180 show a gap above ten points; two above fifteen. The
+Eight finishes out of 1,180 show a gap above ten points; one above fifteen. The
 difference between a front-line death over and a fifth bowler's is three or four
 runs, and spread over the last five overs that usually doesn't add up to much.
+
+One thing the rollout has to be told, because nothing else in the stack sees
+it: spin costs more than pace in the last two overs. Runs conceded against the
+model's neutral expectation, 2008–2026, are +0.4 an over for pace at overs
+19–20 and +1.6 for spin — +0.6 versus +2.0 at the 20th — and even the best
+spinners sit around +1 there. The expected-runs model is blind to bowling type
+and the player rating is a career average earned mostly in the middle overs, so
+a top spinner was being credited an economy edge at the death that the data
+doesn't support. A spinner's over now carries a small extra cost at the 19th
+and 20th — half the size of that raw gap, since some of it is desperation spin.
 
 The biggest single disagreement is KKR v SRH at Hyderabad in 2023. SRH needed
 48 off 36 with six wickets in hand; KKR's captain used Shardul Thakur and
 Vaibhav Arora for the seam overs around Narine and Chakaravarthy. The optimiser
-would have gone spin-heavy — Narine and Varun bowled out, the sixth over to the
-part-timer Anukul Roy rather than Thakur. On the model's read of those bowlers
-that is worth about ten runs across the remaining overs, which moves SRH from
-roughly 79% to 61%. That's the model backing one attack over another — a real
-if arguable call, not a single over deciding the game.
+would have gone spin-heavy through the middle of the death — Narine and Varun
+bowled out — with a seamer kept back for the 20th. On the model's read of those
+bowlers that is worth about ten runs across the remaining overs, which moves
+SRH from roughly 79% to 61%. That's the model backing one attack over another —
+a real if arguable call, not a single over deciding the game.
 
 An earlier draft had a different example here: SRH v DC at Visakhapatnam in
 2019, where the optimiser looked to gain seven points by swapping one Basil

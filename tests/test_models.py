@@ -148,3 +148,29 @@ def test_optimiser_win_prob_is_not_a_step_at_the_target() -> None:
     assert 0.25 < res.batting_win_prob.min() < 0.75, res.batting_win_prob.min()
     # and the best-to-worst spread over legal orders stays sane, not 0-to-1
     assert res.batting_win_prob.max() - res.batting_win_prob.min() < 0.35
+
+
+def test_optimiser_prefers_pace_to_spin_at_the_very_death() -> None:
+    """Spin costs ~1 run/over more than pace in the last two overs, over and
+    above the type-blind xRuns and the career Layer-3 rating. Given a pacer and
+    a spinner of equal standing, the optimiser should hand them the 20th over
+    to the pacer.
+    """
+    import pandas as pd
+
+    from ballpark.models.optimise import BowlingOptimiser
+    from ballpark.archetypes import load_meta
+
+    pace_by_id = load_meta().set_index("person_id").bowl_pace.to_dict()
+    opt = BowlingOptimiser()
+    a_pacer = next(i for i, p in pace_by_id.items() if p == "pace" and i in opt.eff)
+    a_spinner = next(i for i, p in pace_by_id.items() if p == "spin" and i in opt.eff)
+    # force equal ratings so only the death penalty separates them
+    opt.eff[a_pacer] = opt.eff[a_spinner] = 0.0
+
+    start = {"innings": 2, "score": 150, "wickets": 4, "balls_bowled": 108,
+             "allotted": 120, "venue": "Wankhede Stadium", "venue_era": "current",
+             "target": 175, "toss": False}
+    res = opt.optimise(start, {a_pacer: 1, a_spinner: 1}, 2)
+    best = res.iloc[0]["order"]
+    assert best[-1] == a_pacer, best  # the 20th over goes to the pacer

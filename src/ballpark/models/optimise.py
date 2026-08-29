@@ -27,6 +27,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ..archetypes import load_meta
 from ..config import load_config, processed
 from . import _common as C
 
@@ -37,6 +38,13 @@ from . import _common as C
 # fixed. A little of this is the rollout's own uncertainty about the mean, which
 # is the right thing to fold in here anyway.
 SCORE_SD_ROOT_BALL = 2.85
+
+# Spin costs more than pace in the last two overs, beyond anything xRuns (type-
+# blind) or the Layer-3 rating (a career average) can see. Actual minus xRuns,
+# 2008-2026: over 19 spin +1.1 runs/over vs pace +0.2, over 20 spin +2.0 vs
+# +0.6; even top-tier spinners are +0.9 / +1.3 there. Added to a spinner's over
+# in the rollout -- conservative, roughly the recent-seasons spin-minus-pace gap.
+DEATH_SPIN_PENALTY = {19: 0.5, 20: 0.8}  # runs added, by over
 
 
 def _phase_of(over: int) -> str:
@@ -81,6 +89,7 @@ class BowlingOptimiser:
         if effects is None:
             effects = pd.read_parquet(processed("player_effects.parquet"))
         self.eff = _bowler_effect(effects)
+        self.pace = load_meta().set_index("person_id").bowl_pace.to_dict()
         self._xr_cache: dict = {}
         self._wp_cache: dict = {}
 
@@ -124,8 +133,11 @@ class BowlingOptimiser:
         score, wkts, balls = float(start["score"]), float(start["wickets"]), int(start["balls_bowled"])
         path = []
         for bowler in order:
+            over = balls // 6 + 1
             xr, xw = self._xruns(start, balls, score, wkts)
             xr = xr - self.eff.get(bowler, 0.0) * 6
+            if self.pace.get(bowler) == "spin":
+                xr = xr + DEATH_SPIN_PENALTY.get(over, 0.0)
             score += max(xr, 0); wkts = min(wkts + xw, 10); balls += 6
             path.append((bowler, round(xr, 1)))
         return {"proj_score": score, "proj_wkts": wkts,

@@ -742,8 +742,8 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
         <dt>What it shows</dt>
         <dd>Run over all 1,180 close‑finish states in the data, the optimiser's
           plan and the captain's real one come out within two win‑probability
-          points of each other 84% of the time, within five points 90%. Seven
-          finishes show a gap above ten points; two above fifteen.</dd>
+          points of each other 84% of the time, within five points 90%. Eight
+          finishes show a gap above ten points; one above fifteen.</dd>
         <dt>Why it's useful</dt>
         <dd>Bowler-quality edges at the death are real but small, so a tool that
           disagreed with the captain every time would just be wrong. The
@@ -777,20 +777,21 @@ shrunk gap     ≈  60 / (60 + 100)  ×  20      =  0.375 × 20   = <span class=
 
 <span class="c"># bowler_effect (runs saved per 100 balls, shrunk Layer-3 estimate):</span>
 <span class="c">#   SP Narine  +28   ·   CV Varun  +16   ·   AS Roy  +12   ·   VG Arora  −1   ·   SN Thakur  −4</span>
+<span class="c"># plus: a spinner's 19th costs +0.5, the 20th +0.8 — spin goes for more there.</span>
 
   ── CAPTAIN:  Thakur → Varun → Arora → Varun → Arora → Varun ──
     seam from Thakur and Arora around Varun          projected SRH total  ≈ <span class="k">184</span>
 
-  ── OPTIMISER:  Roy → Varun → Narine → Varun → Narine → Varun ──
-    spin through, the loose over to part-timer Roy   projected SRH total  ≈ <span class="g">174</span>
+  ── OPTIMISER:  Varun → Narine → Varun → Narine → Varun → Arora ──
+    spin through the middle overs, a seamer at the 20th  projected SRH total  ≈ <span class="g">175</span>
 
-<span class="c"># ~10 runs across the six overs, on the model's read of KKR's spin vs their seam.</span>
+<span class="c"># ~9 runs across the six overs, on the model's read of KKR's spin vs their seam.</span>
 
   the projected total is a mean, not a fact — treat it as Normal(mean, σ),
   σ = 2.85 × √(balls left) ≈ 17 with 36 to go, and average Layer 2 over it:
 
     captain    P(SRH reach 172 | mean 184, σ 17)   →  chasing-side win prob  <span class="k">≈ 0.79</span>
-    optimiser  P(SRH reach 172 | mean 174, σ 17)   →  chasing-side win prob  <span class="g">≈ 0.61</span>
+    optimiser  P(SRH reach 172 | mean 175, σ 17)   →  chasing-side win prob  <span class="g">≈ 0.61</span>
                                                                         Δ  =  <span class="k">+0.18</span>
 
 <span class="c"># Without the σ step, Layer 2 at the end of an innings is a step at the target:</span>
