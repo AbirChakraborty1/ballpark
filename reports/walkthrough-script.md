@@ -71,9 +71,10 @@ voiceover over a screen capture of the app.
 > says where the models fall short, which not many cricket models bother to do.
 
 **11 — The simulator _(3:50, ~24s)_**
-> The sixth tab is a full-match simulator. Load any Cricsheet T20 zip, set two
-> line-ups and a venue, and it plays the game out ball by ball, entirely in
-> your browser. Each player's recent form, weighted toward strong opposition; a
+> The sixth tab is a full-match simulator. The full IPL history is preloaded —
+> add another league's Cricsheet zip if you want — then set two line-ups and a
+> venue, and it plays the game out ball by ball, entirely in your browser. Each
+> player's recent form, weighted toward strong opposition; a
 > pace-versus-spin matchup; who's set; how the last few overs have gone; and a
 > calibrated win probability at the end.
 

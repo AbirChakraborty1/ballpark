@@ -4,6 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Full Match Simulator</title>
+<script>/* the host page swaps in the preloaded IPL dataset here */ window.__DEFAULT_DATASET__ = null;</script>
 <style>
   :root{
     --bg:#101820;
@@ -108,6 +109,10 @@
   .file-list li{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13px; font-family:var(--font-mono); background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; }
   .file-list li .n{ color:var(--muted); }
   .file-list li .status-ok{ color:var(--ok); }
+  .file-list li .right{ display:flex; align-items:center; gap:10px; }
+  .file-list li .del{ border:1px solid var(--border); background:var(--surface); color:var(--muted); border-radius:5px; width:22px; height:22px; line-height:1; font-size:14px; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .file-list li .del:hover{ border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }
+  .file-list li .del:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
   .progress-row{ margin-top:14px; display:none; }
   .progress-row.active{ display:block; }
@@ -339,7 +344,7 @@
   <section id="uploadSection">
     <div class="card">
       <h2>1. Load match data</h2>
-      <p class="sub">Upload one or more Cricsheet "Ashwin" format zip files (pairs of <code>&lt;id&gt;.csv</code> / <code>&lt;id&gt;_info.csv</code>). Nothing leaves your browser.</p>
+      <p class="sub">The full IPL ball-by-ball set (Cricsheet, 2008&ndash;2026) loads automatically. Add more Cricsheet "Ashwin" format zips &mdash; any men's T20 league &mdash; or remove a set with the &times; next to it. Nothing leaves your browser.</p>
       <div id="dropzone" tabindex="0" role="button" aria-label="Upload zip file">
         <span class="icon">🏏</span>
         <div class="primary">Click to choose a .zip, or drag one here</div>
@@ -2906,7 +2911,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   var db = MatchEngine.newDB();
   var processedMatchIds = Object.create(null);
-  var rawMatches = []; // {id, infoText, ballText} - kept so name-map edits can reprocess without re-upload
+  var rawMatches = []; // {id, infoText, ballText, src} - kept so name-map edits can reprocess without re-upload
+  var datasets = []; // {name, count, isDefault} - one row per loaded zip, each removable
   var currentVenueMap = shallowCopyMap(MatchEngine.DEFAULT_VENUE_MAP);
   var currentTeamMap = shallowCopyMap(MatchEngine.DEFAULT_TEAM_MAP);
   function shallowCopyMap(m) {
@@ -3008,18 +3014,59 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     fileInput.value = "";
   });
 
-  function addFileRow(name, statusText) {
-    var li = document.createElement("li");
-    var left = document.createElement("span");
-    left.textContent = name;
-    var right = document.createElement("span");
-    right.className = "n";
-    right.textContent = statusText || "";
-    li.appendChild(left);
-    li.appendChild(right);
-    fileListEl.appendChild(li);
-    return right;
+  function renderDatasets() {
+    fileListEl.innerHTML = "";
+    datasets.forEach(function (ds) {
+      var li = document.createElement("li");
+      var left = document.createElement("span");
+      left.textContent = ds.name;
+      var right = document.createElement("span");
+      right.className = "right";
+      var status = document.createElement("span");
+      status.className = ds.status === "err" ? "n" : (ds.loading ? "n" : "status-ok");
+      status.textContent = ds.loading
+        ? (ds.progress || "reading…")
+        : (ds.status === "err"
+            ? (ds.message || "failed to read")
+            : ds.count.toLocaleString() + " match" + (ds.count === 1 ? "" : "es"));
+      right.appendChild(status);
+      if (!ds.loading) {
+        var del = document.createElement("button");
+        del.className = "del";
+        del.type = "button";
+        del.setAttribute("aria-label", "Remove " + ds.name);
+        del.textContent = "×";
+        del.addEventListener("click", function () { removeDataset(ds.name); });
+        right.appendChild(del);
+      }
+      li.appendChild(left);
+      li.appendChild(right);
+      fileListEl.appendChild(li);
+    });
   }
+
+  function removeDataset(name) {
+    var idx = -1;
+    for (var i = 0; i < datasets.length; i++) if (datasets[i].name === name) { idx = i; break; }
+    if (idx === -1) return;
+    datasets.splice(idx, 1);
+    rawMatches = rawMatches.filter(function (r) { return r.src !== name; });
+    if (datasets.length === 0 || rawMatches.length === 0) {
+      datasets = [];
+      rawMatches = [];
+      db = MatchEngine.newDB();
+      processedMatchIds = Object.create(null);
+      squadCache = Object.create(null);
+      dbSummary.style.display = "none";
+      ["setupSection", "modelSection", "profileSection", "venueSection", "runSection", "resultsSection", "explainSection"]
+        .forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.remove("active"); });
+      renderDatasets();
+      return;
+    }
+    reprocessAllMatches(); // rebuilds db + processedMatchIds from what's left, then refreshAfterLoad()
+    renderDatasets();
+  }
+
   function yieldToUI() {
     return new Promise(function (resolve) { setTimeout(resolve, 0); });
   }
@@ -3028,11 +3075,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (!files.length) { alert("Please choose a .zip file exported from Cricsheet."); return; }
     files.reduce(function (chain, file) { return chain.then(function () { return processZipFile(file); }); }, Promise.resolve());
   }
-  function processZipFile(file) {
-    var statusEl = addFileRow(file.name, "reading…");
+  function processZipFile(file, opts) {
+    opts = opts || {};
+    var name = opts.label || file.name;
+    // a re-dropped file just refreshes its row
+    datasets = datasets.filter(function (d) { return d.name !== name; });
+    var ds = { name: name, count: 0, loading: true, progress: "reading…", isDefault: !!opts.isDefault };
+    datasets.push(ds);
+    renderDatasets();
     progressRow.classList.add("active");
     progressFill.style.width = "0%";
-    progressLabel.textContent = "Unpacking " + file.name + "…";
+    progressLabel.textContent = "Unpacking " + name + "…";
 
     return file
       .arrayBuffer()
@@ -3044,7 +3097,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         });
         var total = infoNames.length;
         if (!total) {
-          statusEl.textContent = "no matches found";
+          ds.loading = false; ds.status = "err"; ds.message = "no matches found";
+          renderDatasets();
           progressRow.classList.remove("active");
           return;
         }
@@ -3072,6 +3126,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
               if (!r) return;
               if (processedMatchIds[r.id]) return;
               processedMatchIds[r.id] = true;
+              r.src = name;
               rawMatches.push(r);
               MatchEngine.processMatch(db, r.id, r.infoText, r.ballText, currentVenueMap, currentTeamMap);
               newMatches++;
@@ -3079,23 +3134,40 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             done = endIdx;
             var pct = Math.round((done / total) * 100);
             progressFill.style.width = pct + "%";
-            progressLabel.textContent = "Processing " + file.name + ": " + done + " / " + total + " matches";
+            ds.progress = done.toLocaleString() + " / " + total.toLocaleString();
+            renderDatasets();
+            progressLabel.textContent = "Processing " + name + ": " + done + " / " + total + " matches";
             if (done < total) return yieldToUI().then(function () { return processChunk(endIdx); });
           });
         }
         return processChunk(0).then(function () {
-          statusEl.textContent = newMatches + " new match" + (newMatches === 1 ? "" : "es") + " loaded";
-          statusEl.className = "status-ok";
+          ds.loading = false;
+          ds.count = newMatches;
+          renderDatasets();
           progressRow.classList.remove("active");
         });
       })
       .catch(function (err) {
         console.error(err);
-        statusEl.textContent = "failed to read (" + (err && err.message ? err.message : "error") + ")";
+        ds.loading = false; ds.status = "err";
+        ds.message = "failed to read (" + (err && err.message ? err.message : "error") + ")";
+        renderDatasets();
         progressRow.classList.remove("active");
       })
       .then(function () { refreshAfterLoad(); });
   }
+
+  // Preloaded IPL data, injected by the Streamlit page as base64 (see 6_Match_simulator.py).
+  (function bootstrapDefault() {
+    var d = window.__DEFAULT_DATASET__;
+    if (!d || !d.b64) return;
+    try {
+      var bin = atob(d.b64), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var f = new File([bytes], "ipl_preloaded.zip", { type: "application/zip" });
+      processZipFile(f, { label: d.name || "IPL (preloaded)", isDefault: true });
+    } catch (e) { console.error("default dataset failed", e); }
+  })();
 
   venueMapInput.value = JSON.stringify(currentVenueMap, null, 2);
   teamMapInput.value = JSON.stringify(currentTeamMap, null, 2);

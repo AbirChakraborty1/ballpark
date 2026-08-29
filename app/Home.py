@@ -25,10 +25,16 @@ st.markdown(
     "and WinViz answer, from data anyone can download."
 )
 
+FEEDBACK_URL = (
+    "https://docs.google.com/forms/d/e/"
+    "1FAIpQLSdiQHsmJK0twAtgUyxLv_QnEOkaXDrL-nszGXlWiyQKgTYXIA/viewform"
+)
+
 st.caption(
     "Abir Chakraborty  ·  mail2abirchakraborty@gmail.com  ·  "
     "[LinkedIn](https://www.linkedin.com/in/abir-chakraborty1/)  ·  "
     "[GitHub](https://github.com/AbirChakraborty1/ballpark)  ·  "
+    f"[feedback form]({FEEDBACK_URL})  ·  "
     "a portfolio project, not a product"
 )
 
@@ -73,8 +79,9 @@ st.markdown(
        it does what the captain did. The interesting part is when it doesn't.
     5. **Model card** — where the models hold up, where they don't, and what a
        public dataset can't see.
-    6. **Full-match simulator** — a separate tool. Load any Cricsheet T20 zip,
-       set two line-ups, and it simulates the game ball by ball in your browser.
+    6. **Full-match simulator** — a separate tool. The full IPL ball-by-ball
+       history is preloaded (add other leagues' Cricsheet zips if you like);
+       set two line-ups and it simulates the game ball by ball in your browser.
     """
 )
 
@@ -86,4 +93,16 @@ st.info(
     "and regress the small samples. The last section of the model card is what "
     "I'd want to build first if I had tracking data to work with.",
     icon="📌",
+)
+
+st.divider()
+lc, rc = st.columns([3, 2])
+lc.markdown(
+    "**Found something off, or have an idea?** I'd genuinely like to hear it — "
+    "a wrong number, a player the model reads badly, a feature worth adding."
+)
+rc.link_button("Leave feedback", FEEDBACK_URL, use_container_width=True)
+st.caption(
+    "Abir Chakraborty  ·  [mail2abirchakraborty@gmail.com](mailto:mail2abirchakraborty@gmail.com)"
+    "  ·  [LinkedIn](https://www.linkedin.com/in/abir-chakraborty1/)"
 )
