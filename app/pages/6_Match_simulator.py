@@ -7,6 +7,11 @@ shipped alongside it (app/assets/ipl_sample.zip) and injected as base64 so the
 page opens ready to run; more Cricsheet zips can be added, and any set removed,
 from inside the frame. Nothing is uploaded to a server. The HTML/JS lives at
 app/assets/full_match_simulator.html.
+
+The page is rendered as bare as possible — no Streamlit header or intro — so the
+component's iframe sits at the top of the view. It sizes its own iframe to its
+content (the fit script at the end of the HTML), leaving a single scrollbar (the
+page's) and letting its modals use the full height of the screen.
 """
 from __future__ import annotations
 
@@ -16,25 +21,22 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-from _data import page_header
+st.set_page_config(page_title="ballpark — match simulator", page_icon="🏏", layout="wide")
 
-page_header(
-    "Full-match simulator",
-    "The full IPL ball-by-ball history is loaded for you; set two line-ups and a "
-    "venue and it plays the game out ball by ball. Each player's profile is his "
-    "own recent form, weighted toward strong opposition; the ball outcome mixes "
-    "the batter and the bowler, adjusts for who's set and how the last few overs "
-    "have gone, and the win probability at the end is calibrated. Add another "
-    "league's Cricsheet zip, or remove a set, and everything refits.",
-)
-
-st.info(
-    "A separate tool from the pages above — those use models I trained "
-    "offline on the IPL; this one builds everything on the fly from whatever "
-    "data is loaded, entirely in your browser. The IPL set comes preloaded; any "
-    "other men's T20 zip from [cricsheet.org](https://cricsheet.org/downloads/) "
-    "can be added below. It scrolls inside its own frame.",
-    icon="📦",
+# Pull the component close to the top: trim Streamlit's default block padding and
+# let it use the full width. The header bar is left in place (it holds the
+# sidebar-expand control) but made transparent so it doesn't add visual weight.
+st.markdown(
+    """
+    <style>
+      [data-testid="stMainBlockContainer"], .block-container {
+        padding: 3rem 1rem 0 1rem; max-width: 100%;
+      }
+      [data-testid="stHeader"], header[data-testid="stHeader"] { background: transparent; }
+      [data-testid="stElementContainer"]:has(> iframe) { line-height: 0; }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 _ASSETS = Path(__file__).resolve().parents[1] / "assets"
@@ -62,6 +64,6 @@ def _page(_sim_sig: tuple, _zip_sig: tuple) -> str:
 
 components.html(
     _page(_sig("full_match_simulator.html"), _sig("ipl_sample.zip")),
-    height=1500,
-    scrolling=True,
+    height=700,          # starting size only; the page grows its own iframe to fit
+    scrolling=True,      # fallback for any browser that blocks frameElement access
 )

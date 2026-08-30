@@ -331,6 +331,33 @@
   .feature-card .fc-example b{ color:var(--accent); }
 
   footer.foot{ margin-top:40px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-size:12.5px; }
+
+  /* ---- ⚙ model-settings panel + factor-strength sliders ---- */
+  header.top .head-actions{ display:flex; align-items:center; gap:8px; align-self:center; }
+  .settings-toggle{ font-size:18px; line-height:1; width:38px; height:38px; border-radius:9px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .settings-toggle:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .settings-toggle.on{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .settings-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .settings-toggle::after{ content:""; position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-radius:50%; background:var(--accent); display:none; }
+  .settings-toggle.on{ position:relative; }
+  .settings-toggle.on::after{ display:block; }
+  .data-scope-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 18px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .data-scope-row label{ font-weight:600; font-size:13.5px; }
+  .data-scope-row select{ padding:6px 10px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-body); font-size:13.5px; }
+  .data-scope-row .n{ color:var(--muted); font-size:12.5px; }
+  .settings-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px 24px; }
+  .strength-row{ display:grid; grid-template-columns:1fr; gap:4px; }
+  .strength-row .sr-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .strength-row .sr-name{ font-weight:700; font-size:13.5px; }
+  .strength-row .sr-val{ font-family:var(--font-mono); font-size:12.5px; color:var(--accent); font-weight:600; min-width:3ch; text-align:right; }
+  .strength-row .sr-val.off{ color:var(--muted); }
+  .strength-row input[type=range]{ width:100%; accent-color:var(--accent); }
+  .strength-row .sr-desc{ font-size:11px; color:var(--muted); line-height:1.4; }
+  .recent-vs-final{ width:100%; border-collapse:collapse; font-size:12px; margin:4px 0 14px; }
+  .recent-vs-final th{ text-align:center; font-size:9.5px; text-transform:uppercase; letter-spacing:.02em; color:var(--muted); font-weight:600; padding:5px 4px; border-bottom:1px solid var(--border); }
+  .recent-vs-final th:first-child{ text-align:left; }
+  .recent-vs-final td{ padding:5px 4px; border-bottom:1px solid var(--border); text-align:center; font-family:var(--font-mono); }
+  .recent-vs-final td:first-child{ text-align:left; font-family:var(--font-body); }
 </style>
 
 <div class="wrap">
@@ -339,12 +366,15 @@
       <h1>Full Match Simulator</h1>
       <div class="tagline">Both teams field a batting line-up and a bowling plan. Each side's innings is simulated ball by ball; every event probability is shaped by the batter, the specific bowler and their pace/spin type, the phase and batting position, the venue, wickets in hand, how set the batter is, and in-innings momentum. Win probability blends a standalone-innings score comparison with a required-rate-aware chase pass, then calibrates for how much data the model has.</div>
     </div>
+    <div class="head-actions">
+      <button type="button" id="settingsToggle" class="settings-toggle" aria-label="Model settings" aria-expanded="false" title="Model settings — dial each factor up or down">&#9881;</button>
+    </div>
   </header>
 
   <section id="uploadSection">
     <div class="card">
       <h2>1. Load match data</h2>
-      <p class="sub">The full IPL ball-by-ball set (Cricsheet, 2008&ndash;2026) loads automatically. Add more Cricsheet "Ashwin" format zips &mdash; any men's T20 league &mdash; or remove a set with the &times; next to it. Nothing leaves your browser.</p>
+      <p class="sub">The full IPL ball-by-ball set (Cricsheet, 2008&ndash;2026) loads automatically. Add more Cricsheet "Ashwin" format zips &mdash; any men's T20 league &mdash; or remove a set with the &times; next to it. Use <em>Consider matches from</em> below to drop older seasons, and the <span aria-hidden="true">&#9881;</span> icon (top right) to dial any model factor up or down. Nothing leaves your browser.</p>
       <div id="dropzone" tabindex="0" role="button" aria-label="Upload zip file">
         <span class="icon">🏏</span>
         <div class="primary">Click to choose a .zip, or drag one here</div>
@@ -361,6 +391,11 @@
         <div class="stat-tile"><div class="num" id="statTeams">0</div><div class="lbl">Teams</div></div>
         <div class="stat-tile"><div class="num" id="statVenues">0</div><div class="lbl">Venues</div></div>
         <div class="stat-tile"><div class="num" id="statPlayers">0</div><div class="lbl">Players</div></div>
+      </div>
+      <div class="data-scope-row" id="dataScopeRow" style="display:none;">
+        <label for="sinceYearSelect">Consider matches from</label>
+        <select id="sinceYearSelect"><option value="0">All years (earliest available)</option></select>
+        <span class="n" id="sinceYearNote"></span>
       </div>
       <details class="name-map-details" id="nameMapDetails">
         <summary>Venue &amp; team name normalization (edit defaults)</summary>
@@ -508,7 +543,7 @@
   <section id="runSection">
     <div class="card">
       <h2>6. Run simulation</h2>
-      <p class="sub">For any ball, bowler-to-batter probability = (batter's vector + bowler's vector) / 2, blended toward the league-wide phase/position norm and tilted by the venue factor above &mdash; the automatically-fit blend weights from the Model panel are applied the same way to every ball, for both innings.</p>
+      <p class="sub">For any ball, bowler-to-batter probability = (batter's vector + bowler's vector) / 2, blended toward the league-wide phase/position norm and tilted by the venue factor above &mdash; the automatically-fit blend weights from the Model panel are applied the same way to every ball, for both innings. Each bowler still bowls exactly the overs you allotted, but <em>which</em> over each spell lands in is drawn fresh every simulation (no two overs in a row from the same bowler), so the review below shows a different over-by-over plan each run.</p>
 
       <div class="sims-row">
         <label for="numSimsInput">Simulations to run</label>
@@ -653,7 +688,7 @@
 
       <div class="model-card">
         <div class="model-card-title">Recency-weighted empirical-Bayes match-state simulation, with Elo-based opponent adjustment</div>
-        <p class="model-card-body">There is no trained classifier or neural network here &mdash; every number the simulation uses is a <strong>weighted statistical estimate</strong> read directly off the ball-by-ball history you loaded, and every one of those weights is itself chosen automatically, not hand-typed. A <strong>chronological Elo rating</strong> propagates team strength so a player's history against weak opposition counts less; <strong>walk-forward cross-validation</strong> picks the recency-decay rate and the phase/position blend that actually predict best; <strong>empirical-Bayes shrinkage</strong> pulls small-sample venues, players and match-state cells back toward the league baseline in proportion to how little evidence they have; and <strong>Monte Carlo simulation</strong> plays the match out ball by ball hundreds of times for a full distribution, not a point estimate. On top of the raw batter/bowler profiles the ball probability is tilted, in order, by the <strong>pace/spin match-up</strong>, the <strong>venue</strong>, <strong>wickets in hand</strong> (over-conditioned), <strong>how set the batter is</strong>, and <strong>in-innings momentum</strong> &mdash; each a shrunk ratio fit the same way. The headline win probability additionally runs a <strong>chase pass</strong> (each side chasing the other's total under required-rate pressure), blends it with the standalone-innings comparison, and regresses toward 50% when the whole model rests on little data. Every mechanism can be switched off in the feature-importance panel below to see exactly what it is worth for this matchup.</p>
+        <p class="model-card-body">There is no trained classifier or neural network here &mdash; every number the simulation uses is a <strong>weighted statistical estimate</strong> read directly off the ball-by-ball history you loaded, and every one of those weights is itself chosen automatically, not hand-typed. A <strong>chronological Elo rating</strong> propagates team strength so a player's history against weak opposition counts less; <strong>walk-forward cross-validation</strong> picks the recency-decay rate and the phase/position blend that actually predict best; <strong>empirical-Bayes shrinkage</strong> pulls small-sample venues, players and match-state cells back toward the league baseline in proportion to how little evidence they have; and <strong>Monte Carlo simulation</strong> plays the match out ball by ball hundreds of times for a full distribution, not a point estimate. On top of the raw batter/bowler profiles the ball probability is tilted, in order, by the <strong>pace/spin match-up</strong>, the <strong>venue</strong>, <strong>wickets in hand</strong> (over-conditioned), <strong>how set the batter is</strong>, and <strong>in-innings momentum</strong> &mdash; each a shrunk ratio fit the same way. The headline win probability additionally runs a <strong>chase pass</strong> (each side chasing the other's total under required-rate pressure), blends it with the standalone-innings comparison, and regresses toward 50% when the whole model rests on little data. Every mechanism can be switched off in the feature-importance panel below to see exactly what it is worth for this matchup, or dialled part-way &mdash; between its fitted strength and no effect at all &mdash; from the <span aria-hidden="true">&#9881;</span> settings icon, top right.</p>
         <div class="model-tech-grid" id="modelTechGrid"></div>
       </div>
 
@@ -679,6 +714,18 @@
     <p class="modal-sub" id="infoModalSub"></p>
     <div id="infoModalSlotTabs" class="modal-slot-tabs"></div>
     <div id="infoModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsModalOverlay">
+  <div class="modal-box" id="settingsModalBox">
+    <button type="button" class="modal-close" id="settingsModalClose">Close ✕</button>
+    <h3>Model settings</h3>
+    <p class="modal-sub">Every factor below is fitted automatically from the data. Here you can dial each one down toward &ldquo;no effect&rdquo;: <strong>100</strong> = full strength, <strong>0</strong> = the factor is switched off (e.g. venue&nbsp;0 &rarr; every ground plays the same), <strong>50</strong> = the factor still points the same way but half as far. Changes take effect on the next <em>Run simulation</em>.</p>
+    <div class="settings-grid" id="strengthSliders"></div>
+    <div style="margin-top:16px;">
+      <button type="button" class="btn secondary small" id="resetStrengthsBtn">Reset all to 100</button>
+    </div>
   </div>
 </div>
 
@@ -792,6 +839,38 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function ratioOf(vec, base) {
     return vec.map(function (v, k) { return base[k] > 1e-9 ? v / base[k] : 1; });
+  }
+
+  // ---- user "factor strength" dials (the ⚙ panel) ---------------------------
+  // Each mechanism can be scaled between its fully-fitted effect (1.0) and "no
+  // effect at all" (0.0), continuously. 0.5 keeps the effect pointing the same
+  // way but half as far from neutral. Null = every dial at 1.0 (the default).
+  var USER_STRENGTHS = null; // { venue, opponent, recency, matchup, wickets, setBatter, momentum, chase } in [0,1]
+  function setStrengths(s) { USER_STRENGTHS = (s && typeof s === "object") ? s : null; }
+  function strengthOf(key) {
+    if (!USER_STRENGTHS) return 1;
+    var v = USER_STRENGTHS[key];
+    if (v === undefined || v === null || isNaN(v)) return 1;
+    return v < 0 ? 0 : (v > 1 ? 1 : v);
+  }
+  // Pull a per-category ratio toward 1 (no effect) by (1 - strength).
+  function dampToNeutral(ratioVec, key) {
+    var s = strengthOf(key);
+    if (s >= 0.9999) return ratioVec.slice();
+    return ratioVec.map(function (r) { return s * r + (1 - s); });
+  }
+  // Recency weights, blended toward flat (all-1) by (1 - strength).
+  function effectiveRecencyWeights(db) {
+    var auto = db.autoWeights || DEFAULT_WEIGHTS;
+    var s = strengthOf("recency");
+    if (s >= 0.9999) return auto;
+    return auto.map(function (w) { return s * w + (1 - s) * 1; });
+  }
+  // Opponent trust-factor, pulled toward 1 (neutral) by (1 - strength).
+  function dampOppFactor(of) {
+    var s = strengthOf("opponent");
+    if (s >= 0.9999) return of;
+    return 1 + s * (of - 1);
   }
   function medianOf(arr) {
     if (!arr.length) return 0;
@@ -1551,6 +1630,36 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     }
     return schedule;
   }
+  // A *random* valid over-by-over allocation: each bowler still bowls exactly
+  // their allotted overs and no one bowls two overs in a row, but which over
+  // each spell lands in varies every innings (real captains don't send the same
+  // bowler out for the 1st over of every match). Draw is weighted by overs
+  // still to bowl, squared, so a bowler with a lot left is picked sooner and we
+  // never strand someone with more overs than slots. Seeded rng -> reproducible.
+  function randomOverSchedule(allocation, totalOvers, rng) {
+    totalOvers = totalOvers || MAX_OVERS;
+    rng = rng || Math.random;
+    for (var attempt = 0; attempt < 40; attempt++) {
+      var left = Object.create(null), ids = [];
+      Object.keys(allocation).forEach(function (id) {
+        if (allocation[id] > 0) { left[id] = allocation[id]; ids.push(id); }
+      });
+      var schedule = [], lastId = null, ok = true;
+      for (var over = 0; over < totalOvers; over++) {
+        var elig = ids.filter(function (id) { return left[id] > 0 && id !== lastId; });
+        if (!elig.length) { ok = false; break; }
+        var weights = elig.map(function (id) { return left[id] * left[id]; });
+        var totalW = weights.reduce(function (a, b) { return a + b; }, 0);
+        var r = rng() * totalW, pick = elig[elig.length - 1];
+        for (var i = 0; i < elig.length; i++) { r -= weights[i]; if (r <= 0) { pick = elig[i]; break; } }
+        left[pick]--;
+        schedule.push(pick);
+        lastId = pick;
+      }
+      if (ok && schedule.length === totalOvers) return schedule;
+    }
+    return buildOverSchedule(allocation, totalOvers); // guaranteed-valid fallback
+  }
   function sumAllocation(allocation) {
     return Object.keys(allocation).reduce(function (s, k) { return s + (allocation[k] || 0); }, 0);
   }
@@ -1639,7 +1748,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     var n = own.ownCount;
     var C = db.venueShrinkC || 15;
     var shrinkT = n / (n + C);
-    var ratio = (ablation && ablation.noVenue) ? NEUTRAL_RATIO.slice() : rawRatio.map(function (r) { return shrinkT * r + (1 - shrinkT) * 1; });
+    var ratio = (ablation && ablation.noVenue)
+      ? NEUTRAL_RATIO.slice()
+      : dampToNeutral(rawRatio.map(function (r) { return shrinkT * r + (1 - shrinkT) * 1; }), "venue");
     return { ratio: ratio, rawRatio: rawRatio, ownVec: own.vec, ownCount: n, baseVec: base, shrinkT: shrinkT, shrinkC: C };
   }
 
@@ -1898,7 +2009,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     var o = Math.max(0, Math.min(MAX_OVERS - 1, overIdx));
     var w = Math.max(0, Math.min(10, wicketsInHand));
     var cell = db.wicketsStateTable[o][w];
-    return cell ? cell.ratio : NEUTRAL_RATIO.slice();
+    return dampToNeutral(cell ? cell.ratio : NEUTRAL_RATIO, "wickets");
   }
   // The actual expected event-shape (not just the multiplicative ratio) for a given over/wickets-
   // in-hand state - the over's own baseline shape tilted by that state's ratio - used purely for
@@ -1938,7 +2049,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function setBatterRatio(db, ballsFaced, ablation) {
     if (ablation && ablation.noSetBatter) return NEUTRAL_RATIO.slice();
     if (!db.setBatterTable) return NEUTRAL_RATIO.slice();
-    return db.setBatterTable[setBatterBucket(Math.max(0, ballsFaced))].ratio;
+    return dampToNeutral(db.setBatterTable[setBatterBucket(Math.max(0, ballsFaced))].ratio, "setBatter");
   }
 
   // (2) Bowler pace/spin type from where they bowl, then a batter x {pace, spin} match-up ratio
@@ -1991,7 +2102,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (ablation && ablation.noMatchup) return NEUTRAL_RATIO.slice();
     var e = db.matchupTable && db.matchupTable[batterId];
     if (!e || !e[bowlerType]) return NEUTRAL_RATIO.slice();
-    return e[bowlerType].ratio;
+    return dampToNeutral(e[bowlerType].ratio, "matchup");
   }
 
   // (3) In-innings momentum - netted against the average of the over-marginals the bucket's balls
@@ -2016,7 +2127,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function momentumRatio(db, recentRunRate, ablation) {
     if (ablation && ablation.noMomentum) return NEUTRAL_RATIO.slice();
     if (!db.momentumTable || recentRunRate === null || recentRunRate === undefined) return NEUTRAL_RATIO.slice();
-    return db.momentumTable[momentumBucket(recentRunRate)].ratio;
+    return dampToNeutral(db.momentumTable[momentumBucket(recentRunRate)].ratio, "momentum");
   }
 
   // (4) Chase pressure - netted against the over marginal the same way momentum is. Only ever
@@ -2040,7 +2151,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function chaseRatio(db, pressure, ablation) {
     if (ablation && ablation.noChase) return NEUTRAL_RATIO.slice();
     if (!db.chaseTable) return NEUTRAL_RATIO.slice();
-    return db.chaseTable[chaseBucket(pressure)].ratio;
+    return dampToNeutral(db.chaseTable[chaseBucket(pressure)].ratio, "chase");
   }
 
   // Runs the whole automatic-model pipeline. Called once after all matches are loaded (or
@@ -2143,12 +2254,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // ablation (optional): {noRecency, noOpponent} - used only by computeFeatureImportance to measure
   // how much each automatic mechanism actually moves the prediction, by disabling it and rerunning.
   function batterProfile(db, batterId, position, ablation) {
-    var weights = (ablation && ablation.noRecency) ? UNIFORM_WEIGHTS : (db.autoWeights || DEFAULT_WEIGHTS);
+    var weights = (ablation && ablation.noRecency) ? UNIFORM_WEIGHTS : effectiveRecencyWeights(db);
     var recs = (db.battingInnings[batterId] || []).slice().sort(function (a, b) { return b.dateObj - a.dateObj; });
     var fallback = fallbackSample(positionMeanVec(db, position), avgBallsAtPosition(db, position));
     var gameSamples = [];
     for (var i = 0; i < 15; i++) {
-      if (i < recs.length) gameSamples.push({ balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), oppFactor: (ablation && ablation.noOpponent) ? 1 : opponentFactor(db, recs[i].opponent, recs[i].matchId) });
+      if (i < recs.length) gameSamples.push({ balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), oppFactor: (ablation && ablation.noOpponent) ? 1 : dampOppFactor(opponentFactor(db, recs[i].opponent, recs[i].matchId)) });
       else gameSamples.push(fallback);
     }
     return { vec: weightedPool(gameSamples, weights), ownCount: Math.min(recs.length, 15), position: position };
@@ -2159,12 +2270,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // analogue of batterProfile, one vector per bowler regardless of how many overs they're
   // allocated this match (no more splitting by 1st/2nd/3rd/4th over of the spell).
   function bowlerProfile(db, bowlerId, ablation) {
-    var weights = (ablation && ablation.noRecency) ? UNIFORM_WEIGHTS : (db.autoWeights || DEFAULT_WEIGHTS);
+    var weights = (ablation && ablation.noRecency) ? UNIFORM_WEIGHTS : effectiveRecencyWeights(db);
     var recs = (db.bowlerMatches[bowlerId] || []).slice().sort(function (a, b) { return b.dateObj - a.dateObj; });
     var fallback = fallbackSample(bowlerLeagueVec(db), avgBallsPerBowlerMatch(db));
     var gameSamples = [];
     for (var i = 0; i < 15; i++) {
-      if (i < recs.length) gameSamples.push({ balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), oppFactor: (ablation && ablation.noOpponent) ? 1 : opponentFactor(db, recs[i].opponent, recs[i].matchId) });
+      if (i < recs.length) gameSamples.push({ balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), oppFactor: (ablation && ablation.noOpponent) ? 1 : dampOppFactor(opponentFactor(db, recs[i].opponent, recs[i].matchId)) });
       else gameSamples.push(fallback);
     }
     return { vec: weightedPool(gameSamples, weights), ownCount: Math.min(recs.length, 15) };
@@ -2174,27 +2285,27 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // sample list (each game's own date/balls/counts/opponent-factor, or the league-mean pad) so
   // the UI can show exactly which numbers went into the pooled rate, not just the final vector.
   function batterProfileDetail(db, batterId, position) {
-    var weights = db.autoWeights || DEFAULT_WEIGHTS;
+    var weights = effectiveRecencyWeights(db);
     var recs = (db.battingInnings[batterId] || []).slice().sort(function (a, b) { return b.dateObj - a.dateObj; });
     var fallbackVec = positionMeanVec(db, position);
     var fallbackBalls = avgBallsAtPosition(db, position);
     var fallback = fallbackSample(fallbackVec, fallbackBalls);
     var samples = [];
     for (var i = 0; i < 15; i++) {
-      if (i < recs.length) samples.push({ isPad: false, dateObj: recs[i].dateObj, balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), opponent: recs[i].opponent, oppFactor: opponentFactor(db, recs[i].opponent, recs[i].matchId) });
+      if (i < recs.length) samples.push({ isPad: false, dateObj: recs[i].dateObj, balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), opponent: recs[i].opponent, oppFactor: dampOppFactor(opponentFactor(db, recs[i].opponent, recs[i].matchId)) });
       else samples.push({ isPad: true, dateObj: null, balls: fallback.balls, counts: fallback.counts.slice(), opponent: null, oppFactor: 1 });
     }
     return { samples: samples, weights: weights, vec: weightedPool(samples, weights), ownCount: Math.min(recs.length, 15), fallbackVec: fallbackVec, fallbackBalls: fallbackBalls, position: position };
   }
   function bowlerProfileDetail(db, bowlerId) {
-    var weights = db.autoWeights || DEFAULT_WEIGHTS;
+    var weights = effectiveRecencyWeights(db);
     var recs = (db.bowlerMatches[bowlerId] || []).slice().sort(function (a, b) { return b.dateObj - a.dateObj; });
     var fallbackVec = bowlerLeagueVec(db);
     var fallbackBalls = avgBallsPerBowlerMatch(db);
     var fallback = fallbackSample(fallbackVec, fallbackBalls);
     var samples = [];
     for (var i = 0; i < 15; i++) {
-      if (i < recs.length) samples.push({ isPad: false, dateObj: recs[i].dateObj, balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), opponent: recs[i].opponent, oppFactor: opponentFactor(db, recs[i].opponent, recs[i].matchId) });
+      if (i < recs.length) samples.push({ isPad: false, dateObj: recs[i].dateObj, balls: recs[i].acc.balls, counts: accToCounts(recs[i].acc), opponent: recs[i].opponent, oppFactor: dampOppFactor(opponentFactor(db, recs[i].opponent, recs[i].matchId)) });
       else samples.push({ isPad: true, dateObj: null, balls: fallback.balls, counts: fallback.counts.slice(), opponent: null, oppFactor: 1 });
     }
     return { samples: samples, weights: weights, vec: weightedPool(samples, weights), ownCount: Math.min(recs.length, 15), fallbackVec: fallbackVec, fallbackBalls: fallbackBalls };
@@ -2277,10 +2388,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   function simulateInnings(db, opts) {
-    // opts: {battingOrder:[id..], batterVecs:{id:[7]}, bowlerSchedule:[id x totalOvers],
-    //        bowlerVecs:{id:[7]}, bowlerFallbackVec:[7], phaseBlendWeight, venueRatio, rng}
+    // opts: {battingOrder:[id..], batterVecs:{id:[7]}, bowlerVecs:{id:[7]},
+    //        bowlerFallbackVec:[7], phaseBlendWeight, venueRatio, rng, and either
+    //        bowlerAlloc:{id:overs} (a fresh random schedule per call) or a fixed
+    //        bowlerSchedule:[id x totalOvers]}
     var battingOrder = opts.battingOrder;
-    var schedule = opts.bowlerSchedule;
+    var schedule = opts.bowlerAlloc
+      ? randomOverSchedule(opts.bowlerAlloc, opts.totalOvers || sumAllocation(opts.bowlerAlloc), opts.rng)
+      : opts.bowlerSchedule;
     var maxBalls = schedule.length * 6;
     var strikerIdx = 0,
       nonStrikerIdx = 1,
@@ -2542,13 +2657,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     Object.keys(bowlingB.vecs).forEach(function (id) { bowlerRunsAllB[id] = []; bowlerWicketsAllB[id] = []; });
 
     var innsA = {
-      battingOrder: battingA.ids, batterVecs: battingA.vecs, bowlerSchedule: bowlingB.schedule,
+      battingOrder: battingA.ids, batterVecs: battingA.vecs,
+      bowlerAlloc: bowlingB.alloc, totalOvers: sumAllocation(bowlingB.alloc), bowlerSchedule: bowlingB.schedule,
       bowlerVecs: bowlingB.vecs, bowlerFallbackVec: bowlerFallbackVec, generalizeVecs: generalizeVecs,
       phaseBlendWeight: phaseBlendWeight, venueRatio: vr.ratio, positionOf: battingA.positionOf,
       bowlerTypes: bowlerTypes, ablation: ablation, rng: rng,
     };
     var innsB = {
-      battingOrder: battingB.ids, batterVecs: battingB.vecs, bowlerSchedule: bowlingA.schedule,
+      battingOrder: battingB.ids, batterVecs: battingB.vecs,
+      bowlerAlloc: bowlingA.alloc, totalOvers: sumAllocation(bowlingA.alloc), bowlerSchedule: bowlingA.schedule,
       bowlerVecs: bowlingA.vecs, bowlerFallbackVec: bowlerFallbackVec, generalizeVecs: generalizeVecs,
       phaseBlendWeight: phaseBlendWeight, venueRatio: vr.ratio, positionOf: battingB.positionOf,
       bowlerTypes: bowlerTypes, ablation: ablation, rng: rng,
@@ -2847,6 +2964,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   var SimEngine = {
     newDB: newDB,
     processMatch: processMatch,
+    setStrengths: setStrengths,
     getTeams: getTeams,
     getVenues: getVenues,
     getSquad: getSquad,
@@ -2854,6 +2972,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     weightedExpectedOvers: weightedExpectedOvers,
     suggestOverAllocation: suggestOverAllocation,
     buildOverSchedule: buildOverSchedule,
+    randomOverSchedule: randomOverSchedule,
     sumAllocation: sumAllocation,
     batterProfile: batterProfile,
     bowlerProfile: bowlerProfile,
@@ -3004,6 +3123,136 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   var setupNote = document.getElementById("setupNote");
   var rerunNote = document.getElementById("rerunNote");
 
+  var dataScopeRow = document.getElementById("dataScopeRow");
+  var sinceYearSelect = document.getElementById("sinceYearSelect");
+  var sinceYearNote = document.getElementById("sinceYearNote");
+  var settingsToggle = document.getElementById("settingsToggle");
+  var settingsModalOverlay = document.getElementById("settingsModalOverlay");
+  var settingsModalClose = document.getElementById("settingsModalClose");
+  var strengthSliders = document.getElementById("strengthSliders");
+  var resetStrengthsBtn = document.getElementById("resetStrengthsBtn");
+
+  // ---------------- Data scope: only consider matches from year X onward -------
+  var sinceYear = 0; // 0 = all
+  function matchYearOf(r) {
+    if (r.year) return r.year;
+    var m = /(?:^|\n)info,date,\s*(\d{4})/.exec(r.infoText || "");
+    r.year = m ? parseInt(m[1], 10) : 0;
+    return r.year;
+  }
+  function passesYearFilter(r) {
+    return !sinceYear || !matchYearOf(r) || matchYearOf(r) >= sinceYear;
+  }
+  function populateSinceYear() {
+    var years = Object.create(null);
+    rawMatches.forEach(function (r) { var y = matchYearOf(r); if (y) years[y] = (years[y] || 0) + 1; });
+    var list = Object.keys(years).map(Number).sort(function (a, b) { return a - b; });
+    var prev = sinceYearSelect.value;
+    sinceYearSelect.innerHTML = '<option value="0">All years (earliest available)</option>';
+    list.forEach(function (y) {
+      var kept = list.filter(function (z) { return z >= y; }).reduce(function (s, z) { return s + years[z]; }, 0);
+      var opt = document.createElement("option");
+      opt.value = String(y);
+      opt.textContent = y + " onward  (" + kept.toLocaleString() + " matches)";
+      sinceYearSelect.appendChild(opt);
+    });
+    if (prev && sinceYearSelect.querySelector('option[value="' + prev + '"]')) sinceYearSelect.value = prev;
+    dataScopeRow.style.display = list.length > 1 ? "flex" : "none";
+  }
+  sinceYearSelect.addEventListener("change", function () {
+    sinceYear = parseInt(sinceYearSelect.value, 10) || 0;
+    if (!rawMatches.length) return;
+    reprocessAllMatches();
+    var used = rawMatches.filter(passesYearFilter).length;
+    sinceYearNote.textContent = sinceYear
+      ? "Using " + used.toLocaleString() + " of " + rawMatches.length.toLocaleString() + " loaded matches."
+      : "";
+    invalidateResult();
+  });
+
+  // ---------------- ⚙ Model-settings panel: per-factor strength dials ----------
+  var STRENGTH_DEFS = [
+    ["recency", "Recent form", "How hard the most recent innings outweigh older ones in a player's 15-game pool. 0 = every game weighted equally."],
+    ["opponent", "Opponent strength", "Down-weighting of form earned against weak teams (chronological Elo). 0 = every opponent counts the same."],
+    ["venue", "Venue", "How much the chosen ground's own scoring history tilts each ball. 0 = every ground plays identically."],
+    ["matchup", "Batter vs pace / spin", "The batter's shift against pace vs spin, beyond their overall vector. 0 = no personal match-up."],
+    ["wickets", "Wickets in hand", "The resource-state tilt — go harder with wickets in the shed, protect when few remain. 0 = off."],
+    ["setBatter", "Time at the crease", "How a batter's scoring changes the longer they have been in. 0 = a set batter and a new batter play the same."],
+    ["momentum", "In-innings momentum", "The last-12-balls run-rate streak effect. 0 = recent scoring does not carry over."],
+    ["chase", "Chase pressure", "Required-rate pressure in the 2nd innings (affects win probability only). 0 = off."],
+  ];
+  var STRENGTHS = {};
+  STRENGTH_DEFS.forEach(function (d) { STRENGTHS[d[0]] = 100; });
+
+  function pushStrengthsToEngine() {
+    var obj = {};
+    Object.keys(STRENGTHS).forEach(function (k) { obj[k] = STRENGTHS[k] / 100; });
+    MatchEngine.setStrengths(obj);
+  }
+  function anyStrengthChanged() {
+    return Object.keys(STRENGTHS).some(function (k) { return STRENGTHS[k] !== 100; });
+  }
+  function buildStrengthSliders() {
+    strengthSliders.innerHTML = "";
+    STRENGTH_DEFS.forEach(function (d) {
+      var key = d[0];
+      var row = document.createElement("div");
+      row.className = "strength-row";
+      row.innerHTML =
+        '<div class="sr-head"><span class="sr-name">' + d[1] + '</span><span class="sr-val" id="srVal_' + key + '">100</span></div>' +
+        '<input type="range" min="0" max="100" step="5" value="' + STRENGTHS[key] + '" id="srInput_' + key + '" aria-label="' + d[1] + ' strength">' +
+        '<div class="sr-desc">' + d[2] + '</div>';
+      strengthSliders.appendChild(row);
+      var input = row.querySelector("input");
+      var val = row.querySelector(".sr-val");
+      function paint() {
+        val.textContent = STRENGTHS[key];
+        val.classList.toggle("off", STRENGTHS[key] === 0);
+      }
+      input.addEventListener("input", function () {
+        STRENGTHS[key] = parseInt(input.value, 10);
+        paint();
+      });
+      input.addEventListener("change", function () {
+        STRENGTHS[key] = parseInt(input.value, 10);
+        paint();
+        pushStrengthsToEngine();
+        settingsToggle.classList.toggle("on", anyStrengthChanged());
+        if (db.matchCount > 0) { refreshProfiles(); refreshVenueTable(); }
+        invalidateResult();
+      });
+      paint();
+    });
+  }
+  resetStrengthsBtn.addEventListener("click", function () {
+    Object.keys(STRENGTHS).forEach(function (k) { STRENGTHS[k] = 100; });
+    STRENGTH_DEFS.forEach(function (d) {
+      var inp = document.getElementById("srInput_" + d[0]);
+      var v = document.getElementById("srVal_" + d[0]);
+      if (inp) inp.value = 100;
+      if (v) { v.textContent = "100"; v.classList.remove("off"); }
+    });
+    pushStrengthsToEngine();
+    settingsToggle.classList.remove("on");
+    if (db.matchCount > 0) { refreshProfiles(); refreshVenueTable(); }
+    invalidateResult();
+  });
+  function openSettingsModal() {
+    settingsModalOverlay.classList.add("open");
+    settingsToggle.setAttribute("aria-expanded", "true");
+    if (typeof reanchorOverlays === "function") reanchorOverlays();
+  }
+  function closeSettingsModal() {
+    settingsModalOverlay.classList.remove("open");
+    settingsToggle.setAttribute("aria-expanded", "false");
+  }
+  settingsToggle.addEventListener("click", openSettingsModal);
+  settingsModalClose.addEventListener("click", closeSettingsModal);
+  settingsModalOverlay.addEventListener("click", function (e) { if (e.target === settingsModalOverlay) closeSettingsModal(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSettingsModal(); });
+  buildStrengthSliders();
+  pushStrengthsToEngine();
+
   // ---------------- Upload handling ----------------
   dropzone.addEventListener("click", function () { fileInput.click(); });
   dropzone.addEventListener("keydown", function (e) {
@@ -3137,8 +3386,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
               if (processedMatchIds[r.id]) return;
               processedMatchIds[r.id] = true;
               r.src = name;
+              matchYearOf(r); // parse + cache r.year
               rawMatches.push(r);
-              MatchEngine.processMatch(db, r.id, r.infoText, r.ballText, currentVenueMap, currentTeamMap);
+              if (passesYearFilter(r)) MatchEngine.processMatch(db, r.id, r.infoText, r.ballText, currentVenueMap, currentTeamMap);
               newMatches++;
             });
             done = endIdx;
@@ -3192,7 +3442,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     processedMatchIds = Object.create(null);
     rawMatches.forEach(function (r) {
       processedMatchIds[r.id] = true;
-      MatchEngine.processMatch(db, r.id, r.infoText, r.ballText, currentVenueMap, currentTeamMap);
+      if (passesYearFilter(r)) MatchEngine.processMatch(db, r.id, r.infoText, r.ballText, currentVenueMap, currentTeamMap);
     });
     refreshAfterLoad();
   }
@@ -3245,6 +3495,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   });
 
   function refreshAfterLoad() {
+    populateSinceYear();
     if (db.matchCount === 0) return;
     squadCache = Object.create(null);
     MatchEngine.finalizeModel(db);
@@ -3815,6 +4066,37 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     html += "</div>";
     return html;
   }
+  // "Recent form only" (the pooled vector) vs "with venue + opponent factored in".
+  // Opponent strength is already inside the pooled vector (each past game is
+  // trust-weighted by how strong that opponent was); the venue tilt is the one
+  // extra season-level factor shown here. Everything situational — bowler
+  // match-up, time at the crease, momentum, wickets in hand — depends on the
+  // ball and is shown in the Review panel's per-ball "i".
+  function renderRecentVsFinal(recentVec, isBatter) {
+    var venue = venueSelect ? venueSelect.value : "";
+    var vr = (venue && db.matchCount > 0) ? MatchEngine.venueRatioVec(db, venue) : null;
+    var finalVec = vr ? MatchEngine.applyVenueTilt(recentVec, vr.ratio) : recentVec.slice();
+    var keys = ["0", "1", "2", "3", "4", "6", "W"];
+    var esR = MatchEngine.expectedScoreFromVec(recentVec);
+    var esF = MatchEngine.expectedScoreFromVec(finalVec);
+    var expLbl = isBatter ? "Exp. score" : "Exp. runs/wkt";
+    var html = '<div class="explain-subhead" style="margin-top:18px;">Recent form only, then with the venue factored in</div>';
+    html += '<div class="table-scroll"><table class="recent-vs-final"><thead><tr><th>Stage</th>';
+    keys.forEach(function (k) { html += "<th>" + k + "</th>"; });
+    html += "<th>" + expLbl + "</th></tr></thead><tbody>";
+    html += "<tr><td>Recent form only" + (isBatter ? "" : "") + "</td>";
+    recentVec.forEach(function (v) { html += "<td>" + (v * 100).toFixed(1) + "%</td>"; });
+    html += "<td>" + formatRB(esR) + "</td></tr>";
+    html += "<tr><td>+ venue" + (venue ? " (" + venue + ")" : "") + "</td>";
+    finalVec.forEach(function (v) { html += "<td>" + (v * 100).toFixed(1) + "%</td>"; });
+    html += "<td>" + formatRB(esF) + "</td></tr>";
+    html += "</tbody></table></div>";
+    html += '<p class="setup-note">Opponent strength is already baked into the &ldquo;recent form&rdquo; row &mdash; each past ' +
+      (isBatter ? "innings" : "match") + ' is trust-weighted by how strong that opponent was at the time (dial in &#9881; Model settings). ' +
+      'The bowler match-up, how set the batter is, in-innings momentum and wickets in hand all depend on the match situation and are shown ball by ball in the Review panel&rsquo;s per-ball &ldquo;i&rdquo;.</p>';
+    return html;
+  }
+
   function openBatterInfo(playerId, playerName, position) {
     var detail = MatchEngine.batterProfileDetail(db, playerId, position);
     var snap = MatchEngine.battingFeatureSnapshot(db, playerId);
@@ -3829,7 +4111,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       ["Boundary% / Dot%", fmt1(snap.boundaryPct) + "% / " + fmt1(snap.dotPct) + "%", "shot-selection profile"],
       ["Avg opponent strength", snap.avgOpponentFactor.toFixed(2) + "x", "trust-weight across pooled sample"],
     ]);
-    infoModalBody.innerHTML = featureHtml + renderDetailTable(detail) + renderFormula(detail, "Expected score (runs before dismissal)");
+    infoModalBody.innerHTML = featureHtml + renderRecentVsFinal(detail.vec, true) + renderDetailTable(detail) + renderFormula(detail, "Expected score (runs before dismissal)");
     infoModalOverlay.classList.add("open");
   }
   function openBowlerInfo(playerId, playerName, overs) {
@@ -3845,7 +4127,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       ["Wickets / match", fmt1(snap.wicketsPerMatch), "last 15 matches"],
       ["Avg opponent strength", snap.avgOpponentFactor.toFixed(2) + "x", "trust-weight across pooled sample"],
     ]);
-    infoModalBody.innerHTML = featureHtml + renderDetailTable(detail) + renderFormula(detail, "Expected runs conceded per wicket");
+    infoModalBody.innerHTML = featureHtml + renderRecentVsFinal(detail.vec, false) + renderDetailTable(detail) + renderFormula(detail, "Expected runs conceded per wicket");
     infoModalOverlay.classList.add("open");
   }
 
@@ -4452,4 +4734,103 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 })();
 
+</script>
+
+<script>
+/* ============ Single-scrollbar fit for the Streamlit embed ============
+   Streamlit's components.html iframe is a fixed height, so when the tool is
+   taller than that the iframe grows its OWN scrollbar on top of the page's —
+   two bars side by side. The iframe here is a same-origin srcdoc, so we can
+   reach window.frameElement and size it to its content: the iframe never
+   scrolls, only the page does. Downside: position:fixed inside a now-tall
+   iframe tracks the iframe (which scrolls with the page), not the browser
+   viewport — so any open .modal-overlay is re-anchored to the visible slice
+   on every scroll/resize. Outside an embed this whole block is a no-op. */
+(function () {
+  "use strict";
+  var fe = null;
+  try { fe = window.frameElement; } catch (e) { fe = null; }
+  var overlays = [].slice.call(document.querySelectorAll(".modal-overlay"));
+
+  window.reanchorOverlays = function reanchorOverlays() {
+    if (!fe) return; // standalone: native position:fixed is correct
+    var openOv = document.querySelector(".modal-overlay.open");
+    if (!openOv) return;
+    var rect, winH;
+    try { rect = fe.getBoundingClientRect(); winH = window.parent.innerHeight || 700; }
+    catch (e) { return; }
+    // content-y that is level with the top of the browser viewport
+    var viewTop = Math.max(0, -rect.top);
+    // how much of the viewport the iframe actually covers right now
+    var viewH = Math.min(winH, rect.bottom) - Math.max(0, rect.top);
+    if (!(viewH > 200)) viewH = winH;
+    openOv.style.position = "absolute";
+    openOv.style.left = "0";
+    openOv.style.right = "0";
+    openOv.style.top = viewTop + "px";
+    openOv.style.height = viewH + "px";
+    var box = openOv.querySelector(".modal-box");
+    if (box) box.style.maxHeight = Math.max(180, viewH - 56) + "px";
+  };
+
+  // The Streamlit page for this tool is rendered flush to the top (no header,
+  // trimmed padding), so the iframe starts within a few px of the viewport top
+  // and a re-anchored overlay already gets nearly the whole screen. If the
+  // component is somehow scrolled far down when a modal opens, pull it up so the
+  // modal isn't a sliver; scrollIntoView walks whatever scroll container
+  // Streamlit is using.
+  window.__onModalOpen = function () {
+    if (!fe) return;
+    try {
+      var rect = fe.getBoundingClientRect();
+      if (rect.top > 24 && rect.height > (window.parent.innerHeight || 700)) {
+        fe.scrollIntoView({ block: "start" });
+      }
+    } catch (e) {}
+    window.reanchorOverlays();
+  };
+  window.__onModalClose = function () {};
+
+  if (!fe) return;
+
+  var lastH = -1;
+  function fit() {
+    if (document.querySelector(".modal-overlay.open")) { window.reanchorOverlays(); return; }
+    // during Streamlit's initial layout the frame can briefly be ~0px wide,
+    // which wraps everything and reports an absurd height — ignore those.
+    if (document.documentElement.clientWidth < 40) return;
+    var h = Math.max(
+      document.body ? document.body.scrollHeight : 0,
+      document.documentElement.scrollHeight
+    );
+    h = Math.min(h, 40000);
+    if (h > 0 && Math.abs(h - lastH) > 2) { fe.style.height = h + "px"; lastH = h; }
+  }
+  fit();
+  window.addEventListener("load", function () { setTimeout(fit, 60); });
+  if (window.ResizeObserver) {
+    try { new ResizeObserver(fit).observe(document.body); } catch (e) {}
+  }
+  setInterval(fit, 400);
+
+  try {
+    window.parent.addEventListener("scroll", window.reanchorOverlays, true);
+    window.parent.addEventListener("resize", window.reanchorOverlays, true);
+  } catch (e) {}
+  window.addEventListener("scroll", window.reanchorOverlays, true);
+
+  // when any overlay toggles .open: align the page + anchor, or restore on close
+  var anyOpen = false;
+  var mo = new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      if (muts[i].attributeName !== "class") continue;
+      var nowOpen = !!document.querySelector(".modal-overlay.open");
+      if (nowOpen && !anyOpen) { anyOpen = true; window.__onModalOpen(); }
+      else if (!nowOpen && anyOpen) { anyOpen = false; window.__onModalClose(); }
+      else if (nowOpen) { window.reanchorOverlays(); }
+      break;
+    }
+  });
+  overlays.forEach(function (ov) { mo.observe(ov, { attributes: true, attributeFilter: ["class"] }); });
+})();
 </script>
